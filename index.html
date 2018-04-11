@@ -1,32 +1,31 @@
 <html>
-<style>
-* { -webkit-border-image: url(#foo) 1 5 1 63 repeat; -webkit-flow-into: foo }
-</style>
-<script>
-function eventhandler() {
-  var a;
-  document.execCommand("selectAll", false);
-  output.slot = "foo";
-  table.deleteCaption();
-  //trigger garbage collector
-  for(var i=0;i<100;i++) {
-    a = new Uint8Array(1024*1024);
-	  window.alert("finished");
-	 
-  }
-}
-</script>
-<table id="table">
-<caption>
-<summary>
-<output id="output">
-<table>
-<th>foo</th>
-</table>
-</table>
-
-<Head>
-	<TITLE> Here </TITLE>
-</Head>
-	<input type="button" value="Click me" onclick="eventHandler()"</input>
+	<style>
+	* { -webkit-border-image: url(#foo) 1 5 1 63 repeat; -webkit-flow-into: foo }
+	</style>
+	<script>
+		function eventhandler() 
+	{
+  			var a;
+  			document.execCommand("selectAll", false);
+  			output.slot = "foo";
+  			table.deleteCaption();
+  			//trigger garbage collector
+  			for(var i=0;i<100;i++) 
+		{
+    			a = new Uint8Array(1024*1024);
+	 	 	window.alert("finished");
+  		}
+	}
+	</script>
+	<table id="table">
+	<caption>
+	<summary>
+	<output id="output">
+	<table>
+	<th>foo</th>
+	<table>
+	</table>
+	<body>
+		<button type="button">Click Me</button>
+	</body>
 </html>
