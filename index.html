@@ -265,7 +265,7 @@ let stage1 = {
             return arg[0];
         }
 
-        for (var i = 0; i < 1000; i++)
+        for (var i = 0; i < 100000; i++)
             InfoLeaker(arg);
 
         var handler = {
@@ -297,7 +297,7 @@ let stage1 = {
             arg[0] = addr;
         }
 
-        for (var i = 0; i < 1000; ++i)
+        for (var i = 0; i < 100000; ++i)
             ObjFaker(arg);
 
         var handler = {
