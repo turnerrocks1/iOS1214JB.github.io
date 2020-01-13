@@ -13,35 +13,6 @@ function delay(ms = 1000){
     }
 }
 
-let LOG_ERROR = 0;
-let LOG_WARN = 1;
-let LOG_INFO = 2;
-
-function log(x, level = LOG_INFO) {
-    if(document.querySelector("#log")){
-        switch(level){
-
-            case LOG_ERROR:
-                document.querySelector("#log").innerHTML += ('<span class="error">'+ x + '</span><br/>');
-                break;
-
-            case LOG_WARN:
-                document.querySelector("#log").innerHTML += ('<span class="warn">'+ x + '</span><br/>');
-                break;
-
-            case LOG_INFO:
-                document.querySelector("#log").innerHTML += ('<span>' + x + '</span><br/>');
-                break;
-
-            default:
-                break;
-        }
-        
-        return;
-    }
-    alert(x);
-}
-
 function print(s){
     alert(s);
 }
@@ -199,18 +170,6 @@ function Int64(v) {
     // Return the value of this number as unsigned hex string.
     this.toString = function() {
         return '0x' + hexlify(Array.from(bytes).reverse());
-    };
-    
-    this.lo = function()
-    {
-        var b = this.bytes();
-        return (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0;
-    };
-
-    this.hi = function()
-    {
-        var b = this.bytes();
-        return (b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0;
     };
     
     this.asInt32 = function() {
