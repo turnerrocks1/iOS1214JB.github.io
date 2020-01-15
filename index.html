@@ -8,12 +8,12 @@
  * It is under no circumstance justified to alter or reuse the code for the harm of innocent users or counter-intelligence.
  * The purpose of this exploit is to demonstrate the impact of zero- and one-click exploits and to run mach_swap without any codesignature requirements.
 */
-var VM_PROT_NONE = 0x0
-var VM_PROT_READ = 0x1
-var VM_PROT_WRITE = 0x2
-var VM_PROT_EXECUTE = 0x4
-//var VM_PROT_NO_CHANGE = 8
-//var VM_PROT_COPY = 16
+var VM_PROT_NONE = 0x00
+var VM_PROT_READ = 0x01
+var VM_PROT_WRITE = 0x02
+var VM_PROT_EXECUTE = 0x04
+var VM_PROT_NO_CHANGE = 0x08
+var VM_PROT_COPY = 0x16
 let fail = function fail(x)
     {
         alert('FAIL: ' + x);
