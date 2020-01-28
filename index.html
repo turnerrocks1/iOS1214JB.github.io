@@ -380,6 +380,6 @@ alert(“...”)
 try {
 pwn();
 } catch (e) {
-fail(e)
+fail('Error: ' + e + (e != null ? '\n' + e.stack : ''));
 }
 </script>
