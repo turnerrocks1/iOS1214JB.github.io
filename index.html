@@ -369,10 +369,17 @@ function pwn() {
 alert(“done”)
 
 }
+let fail = function fail(x)
+    {
+        alert('FAIL: ' + x);
+        location.reload();
+        throw null;
+    }
+
 alert(“...”)
 try {
 pwn();
 } catch (e) {
-throw “failed” + e;
+fail(e)
 }
 </script>
