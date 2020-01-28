@@ -5,6 +5,7 @@ var ALLOCS = 1000
 let convert = new ArrayBuffer(0x8);
 let f64 = new Float64Array(convert);
 let u32 = new Uint32Array(convert);
+let i32 = u32;
 let BASE = 0x100000000;
 function i2f(x) {
       u32[0] = x % BASE;
