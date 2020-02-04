@@ -47,7 +47,7 @@ function createArrayWithSlowPutArrayStorage() {
         // After JIT compilation, this new Array call will construct a normal array (with the
         // original Array prototype) with SlowPutArrayStorage due to profiling information from
         // previous executions (which all ended up transitioning to SlowPutArrayStorage).
-        var a = [];
+        var a = new Array;
         if (i > 0) {
             // Convert the array to SlowPutArrayStorage by installing a prototype with indexed
             // accessors. This object can, however, not be used directly as the prototype is
