@@ -17,6 +17,11 @@ function f2i(x) {
       f64[0] = x;
       return u32[0] + BASE * u32[1];
 }
+function hex(x) {
+    if (x < 0)
+        return `-${hex(-x)}`
+    return `0x${x.toString(16)}`
+}
 function i2jsv(x) {
     u32[0] = (x % BASE);
     u32[1] = ((x - (x % BASE)) / BASE) - 0x10000;
@@ -110,7 +115,7 @@ var primitives = {
   hax(backup);
   victim5[0] = obj;
   hax(i2jsv(0x0108211700001000));
-  return victim5[2];
+  return hex(victim5[2]);
 },
 fakeobj: function (addr) {
   hax(i2jsv(0x0108211700001000));
