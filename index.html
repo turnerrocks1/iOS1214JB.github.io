@@ -22,15 +22,6 @@ function i2jsv(x) {
     u32[1] = ((x - (x % BASE)) / BASE) - 0x10000;
     return f64[0];
 }
-function hex(x) {
-      return `0x${x.toString(16)}`
-}
-function pf(x) {
-    print(hex(f2i(x)));
-}
-function ph(x) {
-    print(hex(x));
-}
 function gc() {
       for (let i = 0; i < 0x10; i++) {
               new ArrayBuffer(0x1000000);
@@ -133,7 +124,7 @@ fakeobj: function (addr) {
   return victim5[0];
 }};
 
-let stage1 = primitives;
+//let stage1 = primitives;
 /*
 var structs = [];
 
