@@ -111,7 +111,7 @@ function fsyms(mem, base, segs, want, syms)
                 var s = want[j];
                 if((strcmp(fn, s)))
                 {
-                    syms[s] = mem.read_i64(off2addr(segs, stab.symoff + i * 0x10 + 0x8));
+                    syms[s] = memory.read_i64(off2addr(segs, stab.symoff + i * 0x10 + 0x8));
                     want.splice(j, 1);
                     break;
                 }
