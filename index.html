@@ -608,7 +608,7 @@ function exploit(){
             
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
             
-            if(seg.fileoff == 0  || seg.size != 0) {
+            if(seg.fileoff == 0 && seg.size != 0) {
             dcache_base_seg = seg;
             //log("dcache base seg@"+dcache_base_seg)
         } else {
