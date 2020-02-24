@@ -181,16 +181,19 @@ function Int64(v) {
     
     this.lo = function()
     {
-        u32[0] = Array.from(bytes);
-        var b = u32[0];
-        alert(hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0),true))
-        return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0),true);
+        //let hex = hex1()
+        u32[0] = this;
+    var b = Array.from(u32);
+    //alert(hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0,true))
+    return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0,true);
     };
 
     this.hi = function()
     {
-        var b = u32[0] = this.bytes;
-        return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0),true);
+        //let hex = hex1()
+        u32[0] = this;
+var b = Array.from(u32);
+return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0,true);
     };
     
     this.asInt32 = function() {
