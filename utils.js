@@ -110,6 +110,7 @@ var Struct = (function() {
 function Int64(v) {
     // The underlying byte array.
     var bytes = new Uint8Array(8);
+    var u32 = new Uint32Array(2);
     this.bytes = bytes;
 
     switch (typeof v) {
@@ -180,13 +181,13 @@ function Int64(v) {
     
     this.lo = function()
     {
-        var b = u32[0];
+        u32[0] = this.bytes;
         return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0);
     };
 
     this.hi = function()
     {
-        var b = u32[0];
+        u32[0] = this.bytes;
         return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0);
     };
     
