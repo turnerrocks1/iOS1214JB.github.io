@@ -20,9 +20,9 @@ function print(s){
 // Return the hexadecimal representation of the given byte.
 function hex(b,c) {
     if (c) {
-    if (x < 0)
-        return `-${hex(-x)}`
-    return `0x${x.toString(16)}`
+    if (b < 0)
+        return `-${hex(-b)}`
+    return `0x${b.toString(16)}`
     } else {
     return ('0' + b.toString(16)).substr(-2);
     }
