@@ -498,6 +498,23 @@ function exploit(){
                 }
                 return arr;
             },
+            readInt64: function(addrObj, offset) {
+                var writer = this.create_writer(addrObj);
+                return writer.read_i64(offset);
+            },
+            writeInt64: function(addrObj, offset, value) {
+                var writer = this.create_writer(addrObj);
+                writer.write_i64(offset, value);
+            },
+            copyfrom: function(addrObj, offset, length) {
+                offset = 0;
+                var writer = this.create_writer(addrObj);
+                var arr = new Uint8Array(length);
+                for (var i = 0; i < length; i++) {
+                    arr[i] = writer.read_i8(offset + i);
+                }
+                return arr;
+            },
         }
         var r32 = function(addr){
             addr= new Int64(addr);
