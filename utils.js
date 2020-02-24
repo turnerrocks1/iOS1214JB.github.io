@@ -181,14 +181,14 @@ function Int64(v) {
     
     this.lo = function()
     {
-        u32[0] = this.bytes;
-        return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0);
+        u32[0] = bytes;
+        return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0),true);
     };
 
     this.hi = function()
     {
-        u32[0] = this.bytes;
-        return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0);
+        u32[0] = bytes;
+        return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0),true);
     };
     
     this.asInt32 = function() {
