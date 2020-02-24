@@ -181,7 +181,7 @@ function Int64(v) {
     
     this.lo = function()
     {
-        u32[0] = 0x0000000012345678;
+        u32[0] = bytes
         var b = u32[0];
         alert(hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0),true))
         return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0),true);
@@ -189,7 +189,7 @@ function Int64(v) {
 
     this.hi = function()
     {
-        var b = u32[0] = 0x0000000012345678;
+        var b = u32[0] = bytes;
         return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0),true);
     };
     
