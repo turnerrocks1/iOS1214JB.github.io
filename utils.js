@@ -18,8 +18,14 @@ function print(s){
 }
 
 // Return the hexadecimal representation of the given byte.
-function hex(b) {
+function hex(b,c) {
+    if (c) {
+    if (x < 0)
+        return `-${hex(-x)}`
+    return `0x${x.toString(16)}`
+    } else {
     return ('0' + b.toString(16)).substr(-2);
+    }
 }
 
 // Return the hexadecimal representation of the given byte array.
@@ -170,6 +176,18 @@ function Int64(v) {
     // Return the value of this number as unsigned hex string.
     this.toString = function() {
         return '0x' + hexlify(Array.from(bytes).reverse());
+    };
+    
+    this.lo = function()
+    {
+        var b = u32[0];
+        return hex((b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0);
+    };
+
+    this.hi = function()
+    {
+        var b = u32[0];
+        return hex((b[4] | (b[5] << 8) | (b[6] << 16) | (b[7] << 24)) >>> 0);
     };
     
     this.asInt32 = function() {
