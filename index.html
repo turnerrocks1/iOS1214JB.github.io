@@ -561,7 +561,7 @@ function exploit(){
         for(var i = 0; i < nsegs; ++i)
         {
             var off = i * 0x20;
-            log(off + i)
+            log(off)
             var seg =
             {
                 addr:     new Int64(segdata.slice(off + 0x0, off + 0x8)),
