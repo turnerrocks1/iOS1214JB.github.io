@@ -663,7 +663,7 @@ function exploit(){
             var base = Add(memory.readInt64(Add(imgs ,i * 0x20)),slide);
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
-            log(hexdump(fn,100,100))
+            log(fn)
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                 alert("...")
