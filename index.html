@@ -559,8 +559,10 @@ function exploit(){
         {
             if(strcmp(memory.read(hdr1, 0x10), "dyld_v1   arm64"))
             {
+                alert('made it')
                 break;
             }
+            alert(hdr1)
             hdr1 = Sub(hdr1, 0x1000);
         }
         var base_seg = null;
