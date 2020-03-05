@@ -62,6 +62,7 @@ function off2addr(segs, off)
                 (end.hi() > off.hi() || (end.hi() == off.hi() && end.lo() > off.lo()))
             )
             {
+                alert(Add(segs[i].addr, Sub(off, start)));
                 return Add(segs[i].addr, Sub(off, start));
             }
         }
@@ -808,4 +809,3 @@ function exploit(){
 }
 exploit();
 </script>
-
