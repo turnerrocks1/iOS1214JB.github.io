@@ -582,6 +582,41 @@ function exploit(){
                 initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
             };
             segs.push(seg);
+            if(seg.maxprot & VM_PROT_NONE){
+                max_rights += "-";
+            }
+            if(seg.maxprot & VM_PROT_READ) {
+                max_rights += "r";
+            }
+            if(seg.maxprot & VM_PROT_WRITE) {
+                max_rights += "w";
+            }
+            if(seg.maxprot & VM_PROT_EXECUTE){
+                max_rights += "x";
+            }
+            if(seg.initprot & VM_PROT_NONE){
+                init_rights += "-";
+            }
+            if(seg.initprot & VM_PROT_READ) {
+                init_rights += "r";
+            }
+            if(seg.initprot & VM_PROT_WRITE) {
+                init_rights += "w";
+            }
+            if(seg.initprot & VM_PROT_EXECUTE){
+                init_rights += "x";
+            }
+            if(max_rights.length < 4){
+                max_rights = "-" + max_rights;
+            }
+            if(init_rights.length < 4){
+                init_rights = "-" + init_rights;
+            }
+            log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
+
+            
+
+
             if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
             {
                 base_seg = seg;
