@@ -582,6 +582,7 @@ function exploit(){
                 initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
             };
             segs.push(seg);
+            var max_rights, init_rights = ""
             if(seg.maxprot & VM_PROT_NONE){
                 max_rights += "-";
             }
