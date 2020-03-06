@@ -607,10 +607,10 @@ function exploit(){
             if(seg.initprot & VM_PROT_EXECUTE){
                 init_rights += "x";
             }
-            if(max_rights.length < 4){
+            if(max_rights.length < 3){
                 max_rights = "-" + max_rights;
             }
-            if(init_rights.length < 4){
+            if(init_rights.length < 3){
                 init_rights = "-" + init_rights;
             }
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
