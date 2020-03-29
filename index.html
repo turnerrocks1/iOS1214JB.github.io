@@ -715,7 +715,7 @@ function exploit(){
 
             };
             alert("dyld image #"+i+":"+ab2str(fn()))
-            var base = Add(memory.read_i64(Add(imgs,i*0x20),0), cache_slide);
+            var base = Add(memory.read_i64(Add(imgs,i * 0x20),0), cache_slide);
             alert("base" + base);
             //alert(opcode_libs.some())
             if(opcode_libs.some(lib => strcmp(fn, lib)))
