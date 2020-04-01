@@ -61,7 +61,7 @@ function off2addr(segs, off)
     {
   
         if(!(off instanceof Int64)) off = new Int64(off);
-        for(var i = 0; i < segs.length; ++i)
+        for(var i = 0; i < 3; ++i)
         {
             var start = segs[i].fileoff;
             var end   = Add(start, segs[i].size);
