@@ -649,7 +649,7 @@ function exploit(){
             
             if(segs[z].fileoff == 0 && segs[z].size != 0)
             {
-                base_seg = seg;
+                base_seg = segs[z];
                 alert(base_seg.addr)
             }
         }
