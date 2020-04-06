@@ -93,7 +93,7 @@ function fsyms(mem, base, segs, want, syms)
         var ncmds = memory.u32(Add(base, 0x10));
         for(var i = 0, off = 0x20; i < ncmds; ++i)
         {
-            var cmd = memory.u32(Add(base, off)
+            var cmd = memory.u32(Add(base, off))
             if(cmd == 0x2) // LC_SYMTAB
             {
                 var b = memory.read(Add(base, off + 0x8), 0x10);
