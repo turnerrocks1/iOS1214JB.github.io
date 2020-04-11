@@ -724,7 +724,7 @@ function exploit(){
         {
             var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x1c)));
             var fn = function(i,oz)
-            {  if(oz) { return memory.read(Add(straddr, i), 0x10)[0];
+            {  if(oz) { return memory.read(Add(straddr, i), 0x10);
             }
                 return memory.read(Add(straddr, i), 1)[0];
             };
