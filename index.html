@@ -815,9 +815,10 @@ function exploit(){
                     break;
                 }
             }
+            let mem3 = memory;
             if(lookup != null)
             {
-                fsyms(memory, base, segs, lookup, syms);
+                fsyms(mem3, base, segs, lookup, syms);
             }
         }
         if(!gadgets['dispatch'])
