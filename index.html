@@ -556,10 +556,10 @@ function foo(obj) {
                 var b = memory.read(Add(base, off + 0x8), 0x10);
                 stab =
                 {
-                    symoff:  b2u32(b.slice(0x0, 0x4)),
-                    nsyms:   b2u32(b.slice(0x4, 0x8)),
-                    stroff:  b2u32(b.slice(0x8, 0xc)),
-                    strsize: b2u32(b.slice(0xc, 0x10)),
+                    symoff:  b2u32(b.slice(0x8, 0xc)),
+                    nsyms:   b2u32(b.slice(0xc, 0x10)),
+                    stroff:  b2u32(b.slice(0x10, 0x14)),
+                    strsize: b2u32(b.slice(0x14, 0x18)),
                 };
                 break;
             }
