@@ -777,7 +777,7 @@ function foo(obj) {
                     if(cmd == 0x19 && strcmp(memory.read(Add(base, off + 0x10), 0x10), "__TEXT")) // LC_SEGMENT_64
                     {
                         var nsects = memory.u32(Add(base, off + 0x40));
-                        for(var k = 0, o = off + 0x48; k < nsects; ++k)
+                        for(var k = 0, let o = off + 0x48; k < nsects; ++k)
                         {
                             if(strcmp(memory.read(Add(base, o), 0x10), "__text"))
                             {
