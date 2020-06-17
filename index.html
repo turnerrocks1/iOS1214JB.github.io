@@ -472,12 +472,6 @@ function foo(obj) {
                 }
                 return arr;
             },
-            write_non_zero: function(where, what) {
-                for (var i = 0; i < what.length; ++i) {
-                if (what[i] != 0) {
-                        this.write_i64(where + i*8, 0, what[i])
-                }
-                },
             readInt64: function(addrObj) {
                 //var offset = 0;
                 //var writer = this.create_writer(addrObj);
@@ -496,6 +490,13 @@ function foo(obj) {
                 }
                 return arr;
             },
+            write_non_zero: function(where, what) {
+            for (var i = 0; i < what.length; ++i) {
+                if (what[i] != 0) {
+                        this.write_i64(where + i*8, 0, what[i])
+                }
+            }
+           },
         }
         var r32 = function(addr){
             addr= new Int64(addr);
