@@ -421,7 +421,7 @@ function foo(obj) {
         writer.write_i64(0, new Int64('0x0000000000000007'));
         writer.write_i64(2, new Int64('0x0000000000000007'));
         
-        //log('[*] We now have stable R/W primitives, hooray!');
+        log('[*] We now have stable R/W primitives, hooray!');
         var memory = {
             create_writer: function(addrObj) {
                 if (addrObj instanceof Int64) {
@@ -474,8 +474,8 @@ function foo(obj) {
             },
             write_non_zero: function(where, what) {
                 for (var i = 0; i < what.length; ++i) {
-                    if (what[i] != 0) {
-                        this.write_i64(where + i*8,0,what[i])
+                if (what[i] != 0) {
+                        this.write_i64(where + i*8, 0, what[i])
                 }
             },
             readInt64: function(addrObj) {
