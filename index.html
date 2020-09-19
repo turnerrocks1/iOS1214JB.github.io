@@ -29,8 +29,8 @@ function main(me) {
         if (!v3) {
             handler = {
                 get (target, propname){
-                	v3[0] = leakme;
-                    return v3[0x4141414141];
+                	v3[0] = 0x41414141;
+                    return v3[0];
                 }
             }
         }
