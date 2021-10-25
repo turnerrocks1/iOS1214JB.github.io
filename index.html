@@ -3,6 +3,8 @@
 <pre id='log' style="font-size : 40px;"></pre>
 <script>
 	var keep = [];
+	let f = new Float64Array(1);
+let u = new Uint32Array(f.buffer);
 	function float2bigint(v) {
   f[0] = v;
   return BigInt(u[0]) | (BigInt(u[1]) << 32n);
