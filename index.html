@@ -27,6 +27,7 @@ let b1 = [0,0,a1,a1,0,0,0,0,0,0]; // store references to a1 to make b1 a boxed a
 // put zeroes in first two slots so JSCallbackData destruction is safe
 delete b1[0];
 delete b1[1];
+	/*
 addrof = (val) => {
     b1[0] = val;
     return float2bigint(a1[offset]);
@@ -34,7 +35,7 @@ addrof = (val) => {
   fakeobj = (addr) => {
     a1[offset] = bigint2float(addr);
     return b1[0];
-  }
+  }*/
     function tohex(n) {
     if(n < 0) {
         n = 0xFFFFFFFF + n + 1;
