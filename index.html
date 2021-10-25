@@ -98,7 +98,12 @@ setTimeout(() => {
         //g_arr_ab_1.push(b);
         \
         //alert(tohex(event.pointerId))
-        event.pointerId = new ArrayBuffer(4
+	  for (var i = 0; i < event.pointerId +1; i++ ) {
+            if(tohex(event.pointerId) == 0) {
+                alert(event.pointerId)
+            }
+        }
+        event.pointerId = new ArrayBuffer(4)
         alert(tohex(event.pointerId))
         //g_arr_ab_1;
         
