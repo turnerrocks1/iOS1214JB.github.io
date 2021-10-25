@@ -97,7 +97,7 @@ setTimeout(() => {
 
     document.appendChild(document.createElement('root'))
     document.close(); // triggers an XSLT transformation
-    alert(tohex(cache_frame));
+    //alert(tohex(cache_frame));
 
   });
     
@@ -106,6 +106,7 @@ setTimeout(() => {
     document.body.setPointerCapture(event.pointerId);
     
     var arr_str = Object.getOwnPropertyNames(g_obj_str);
+	  /*
     for (let i = arr_str.length - 1; i > 0; i--) {
         if (arr_str[i].length > 0xff) {
             alert(arr_str[i].length)
@@ -114,7 +115,7 @@ setTimeout(() => {
             //var g_obj_str = null;
             break;
         }
-    }
+    }*/
     //alert()
     let ab = new ArrayBuffer(100);
         let a = new Float64Array(ab.buffer);
