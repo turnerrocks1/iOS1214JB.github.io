@@ -1,42 +1,12 @@
 <html>
 	<body></body>
-<pre id='log' style="font-size : 40px;"></pre>
-<script>
-    function tohex(n) {
-    if(n < 0) {
-        n = 0xFFFFFFFF + n + 1;
-    }
-    return "0x" + ("00000000" + n.toString(16).toUpperCase()).substr(-8);
-}
-        function print(str) {
-            var log = document.getElementById('log');
-            console.log(str);
-            if (log) {
-                log.innerText += "[+] "+str + '\n';
-            }
-        }
-        function gc() {
-  for (let i = 0; i < 0x400; i++) {
-    new ArrayBuffer(0x1000000);
-  }
-}
+<map name="image-map-1">
 
-	 onload = () => {
-        let output0 = document.createElement('output');
-        document.body.appendChild(output0);
-        let h1 = document.createElement('h1');
-        output0.appendChild(h1);
-        let table0 = document.createElement('table');
-        h1.appendChild(table0);
-        table0.appendChild(document.createElement('h1'));
-        output0.appendChild(document.createElement('div'));
-        document.designMode = 'on';
-        document.execCommand('SelectAll');
-        document.execCommand('DefaultParagraphSeparator', false, 'p');
-        document.execCommand('JustifyRight');
-        document.execCommand('Undo');
-		 document.close();
-        document.write("Test passes if it does not crash.");
-    };
-</script>
+  <area href="../../tutorials.html" alt="HTML tutorials" shape="circle" coords="67,73,47">
+
+  <area href="../../tutorials.html" alt="HTML tutorials" shape="rect" coords="82,0,156,1.7976931348623157E+308">
+
+</map>
+
+<img src="/assets/images/image-map-1-en.png" usemap="#image-map-1" alt="Example image map">
 </html>
